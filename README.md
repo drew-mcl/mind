@@ -2,8 +2,6 @@
 
 radial mind-mapping for projects — web UI + terminal tree viewer
 
-![mind UI](docs/assets/ui.png)
-
 ## install
 
 ```bash
@@ -55,3 +53,9 @@ each project is a JSON file in `~/.mind/`. nodes form a hierarchy: **root** → 
 - **ui**: react flow, zustand, tailwind, vite
 - **cli**: go, cobra, lipgloss
 - **data**: JSON files in `~/.mind/`
+
+<br>
+
+<p align="center">
+  <img src="docs/assets/ui.png" width="720" alt="mind UI" />
+</p>
