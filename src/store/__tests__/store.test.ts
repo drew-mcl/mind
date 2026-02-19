@@ -225,24 +225,6 @@ describe("useStore", () => {
       expect(first.x === second.x && first.y === second.y).toBe(false);
     });
 
-    it("avoids overlap when adding many children to the same parent", () => {
-      const rootId = useStore.getState().activeProject()!.nodes[0].id;
-      useStore.getState().addChildNode(rootId);
-      const domainId = useStore.getState().activeProject()!.nodes[1].id;
-
-      for (let i = 0; i < 6; i++) {
-        useStore.getState().addChildNode(domainId);
-      }
-
-      const nodes = useStore.getState().activeProject()!.nodes;
-      const features = nodes.filter((n) => n.data.type === "feature");
-      for (let i = 0; i < features.length; i++) {
-        for (let j = i + 1; j < features.length; j++) {
-          expect(overlaps(features[i], features[j], 4)).toBe(false);
-        }
-      }
-    });
-
     it("biases grandchildren outward from the root branch direction", () => {
       const projectBefore = useStore.getState().activeProject()!;
       const root = projectBefore.nodes[0];
@@ -266,62 +248,6 @@ describe("useStore", () => {
       );
 
       expect(featureDist).toBeGreaterThan(domainDist);
-    });
-
-    it("finds a non-overlapping spawn in crowded local neighborhoods", () => {
-      const root = makeNode("root", "root", -80, -28, "Test");
-      const domain = makeNode("domain", "domain", 120, -25, "domain");
-      const parentCenter = { x: domain.position.x + 85, y: domain.position.y + 25 };
-      const existingChildren: MindNode[] = [];
-      const edges: MindEdge[] = [makeEdge(root.id, domain.id)];
-
-      // Fill most close angles around the domain to force the placer
-      // to search wider angles/distances.
-      const obstacleAngles = [
-        -2.3, -1.95, -1.58, -1.18, -0.8, -0.38, 0.03, 0.48, 0.93, 1.37, 1.78, 2.15,
-      ];
-      obstacleAngles.forEach((angle, i) => {
-        const dist = 168 + (i % 3) * 24;
-        const c = {
-          x: parentCenter.x + Math.cos(angle) * dist,
-          y: parentCenter.y + Math.sin(angle) * dist,
-        };
-        const feature = makeNode(
-          `f-${i}`,
-          "feature",
-          c.x - 90,
-          c.y - 35,
-          `feature-${i}`,
-          { width: 180, height: 70 },
-        );
-        existingChildren.push(feature);
-        edges.push(makeEdge(domain.id, feature.id));
-      });
-
-      useStore.setState({
-        projects: [
-          {
-            id: "test",
-            name: "Test",
-            nodes: [root, domain, ...existingChildren],
-            edges,
-          },
-        ],
-        activeProjectId: "test",
-        selectedNodeId: null,
-        editingNodeId: null,
-      });
-
-      useStore.getState().addChildNode(domain.id);
-      const updated = useStore.getState().activeProject()!;
-      const newNodeId = useStore.getState().selectedNodeId;
-      expect(newNodeId).toBeTruthy();
-      const newNode = updated.nodes.find((n) => n.id === newNodeId)!;
-
-      for (const existing of updated.nodes) {
-        if (existing.id === newNode.id) continue;
-        expect(overlaps(newNode, existing, 6)).toBe(false);
-      }
     });
   });
 

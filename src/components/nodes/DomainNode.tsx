@@ -30,8 +30,12 @@ export function DomainNode({ id, data, selected }: NodeProps<MindNode>) {
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
-      inputRef.current.focus();
-      inputRef.current.select();
+      const input = inputRef.current;
+      const timer = setTimeout(() => {
+        input.focus();
+        input.select();
+      }, 50);
+      return () => clearTimeout(timer);
     }
   }, [isEditing]);
 
@@ -73,12 +77,13 @@ export function DomainNode({ id, data, selected }: NodeProps<MindNode>) {
           <input
             ref={inputRef}
             defaultValue={data.label}
+            placeholder="Domain name..."
             onBlur={commitEdit}
             onKeyDown={(e) => {
               if (e.key === "Enter") commitEdit();
               if (e.key === "Escape") setEditingNode(null);
             }}
-            className="w-full bg-transparent text-center text-[15px] font-bold tracking-tight outline-none"
+            className="w-full bg-transparent text-center text-[15px] font-bold tracking-tight outline-none placeholder:text-text-muted/50"
             style={{ color: color.text }}
           />
         ) : (

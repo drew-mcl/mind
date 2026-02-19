@@ -63,8 +63,13 @@ export function TaskNode({ id, data, selected }: NodeProps<MindNode>) {
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
-      inputRef.current.focus();
-      inputRef.current.select();
+      const input = inputRef.current;
+      // Short delay ensures DOM is settled and React Flow pane hasn't stolen focus
+      const timer = setTimeout(() => {
+        input.focus();
+        input.select();
+      }, 50);
+      return () => clearTimeout(timer);
     }
   }, [isEditing]);
 
@@ -88,7 +93,7 @@ export function TaskNode({ id, data, selected }: NodeProps<MindNode>) {
     >
       <div
         className={cn(
-          "rounded-xl px-4 py-3 min-w-[140px] max-w-[380px]",
+          "rounded-xl px-4 py-3 min-w-[160px] max-w-[380px]",
           "backdrop-blur-md border border-border shadow-md",
           "transition-all duration-300",
           statusAura[status],
@@ -104,29 +109,30 @@ export function TaskNode({ id, data, selected }: NodeProps<MindNode>) {
         }}
         ref={cardRef}
       >
-        <div className="flex items-start gap-2.5">
-          <span className="mt-[5px] shrink-0">
+        <div className="flex items-center gap-2.5">
+          <span className="shrink-0 flex items-center justify-center">
             <StatusDot status={status} />
           </span>
           {isEditing ? (
             <input
               ref={inputRef}
               defaultValue={data.label}
+              placeholder="Node title..."
               onBlur={commitEdit}
               onKeyDown={(e) => {
                 if (e.key === "Enter") commitEdit();
                 if (e.key === "Escape") setEditingNode(null);
               }}
-              className="min-w-0 flex-1 bg-transparent text-[14px] font-bold tracking-tight text-text-primary outline-none"
+              className="w-full min-w-0 flex-1 bg-transparent text-[14px] font-bold tracking-tight text-text-primary outline-none placeholder:text-text-muted/50"
             />
           ) : (
-            <span className="min-w-0 text-[14px] font-bold leading-[1.3] tracking-tight text-text-primary whitespace-normal break-words">
+            <span className="min-w-0 text-[14px] font-bold leading-tight tracking-tight text-text-primary whitespace-normal break-words">
               {data.label || "Untitled"}
             </span>
           )}
         </div>
         {!isEditing && (
-          <div className="mt-2 flex items-center gap-2 pl-[17px]">
+          <div className="mt-2 flex items-center gap-2 pl-[19px]">
             <span
               className="inline-block rounded px-1.5 py-[0.5px] font-mono text-[9px] font-bold uppercase tracking-wider"
               style={statusPillStyle[status]}

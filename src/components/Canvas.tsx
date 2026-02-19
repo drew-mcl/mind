@@ -106,7 +106,9 @@ function largestGapMidAngle(angles: number[]): number | null {
 }
 
 function vectorToSide(dx: number, dy: number): AddButtonSide {
-  if (Math.abs(dx) > Math.abs(dy)) {
+  // Bias slightly towards vertical (top/bottom) by multiplying dy impact.
+  // This feels more "mind-map-y" than horizontal side-buttons everywhere.
+  if (Math.abs(dx) > Math.abs(dy) * 1.2) {
     return dx >= 0 ? "right" : "left";
   }
   return dy >= 0 ? "bottom" : "top";
@@ -114,6 +116,7 @@ function vectorToSide(dx: number, dy: number): AddButtonSide {
 
 export function Canvas() {
   const project = useActiveProject();
+  const layoutVersion = useStore((s) => s.layoutVersion);
   const onNodesChange = useStore((s) => s.onNodesChange);
   const onEdgesChange = useStore((s) => s.onEdgesChange);
   const setSelectedNode = useStore((s) => s.setSelectedNode);
@@ -372,8 +375,10 @@ export function Canvas() {
           vx += cc.x - c.x;
           vy += cc.y - c.y;
         }
-        if (Math.hypot(vx, vy) > 1) {
-          vector = { x: vx, y: vy };
+        // Normalize the vector sum
+        const mag = Math.hypot(vx, vy);
+        if (mag > 1) {
+          vector = { x: vx / mag, y: vy / mag };
         }
       }
 
@@ -399,28 +404,33 @@ export function Canvas() {
     flowRef.current = instance;
   }, []);
 
-  // Track project ID to only fitView on initial load, not on every layout shuffle
+  // Track project ID and layout version to detect changes
   const prevProjectIdRef = useRef<string | null>(null);
+  const lastLayoutVersionRef = useRef(layoutVersion);
 
   useEffect(() => {
-    if (!projectId || !flowRef.current || !project || !autoFocusEnabled) return;
+    if (!projectId || !flowRef.current || !project) return;
 
-    if (prevProjectIdRef.current !== projectId) {
-      const rf = flowRef.current;
-      const rootNode = project.nodes.find(n => n.data.type === "root");
-      
-      requestAnimationFrame(() => {
-        if (rootNode) {
-          // Focus on the root node at a nice "readable" zoom level
-          const { x, y } = nodeCenter(rootNode);
-          rf.setCenter(x, y, { zoom: 0.85, duration: 0 });
-        } else {
-          rf.fitView(FIT_VIEW_OPTIONS);
-        }
-      });
+    const isManualRearrange = layoutVersion > lastLayoutVersionRef.current;
+    lastLayoutVersionRef.current = layoutVersion;
+
+    if (prevProjectIdRef.current !== projectId || isManualRearrange) {
+      if (autoFocusEnabled || isManualRearrange) {
+        const rf = flowRef.current;
+        const rootNode = project.nodes.find(n => n.data.type === "root");
+        
+        requestAnimationFrame(() => {
+          if (rootNode) {
+            const { x, y } = nodeCenter(rootNode);
+            rf.setCenter(x, y, { zoom: 0.85, duration: isManualRearrange ? 400 : 0 });
+          } else if (prevProjectIdRef.current !== projectId) {
+            rf.fitView(FIT_VIEW_OPTIONS);
+          }
+        });
+      }
       prevProjectIdRef.current = projectId;
     }
-  }, [projectId, project, autoFocusEnabled]);
+  }, [projectId, project, autoFocusEnabled, layoutVersion]);
 
   // Handle viewport locking
   useEffect(() => {

@@ -286,169 +286,44 @@ export const useStore = create<MindStore>((set, get) => ({
     const root = project.nodes.find((node) => node.data.type === "root") ?? parent;
     const rootCenter = nodeCenter(root);
 
-    let preferredAngle: number;
-    if (parent.id === root.id) {
-      const childAngles = children.map((child) => {
-        const c = nodeCenter(child);
-        return Math.atan2(c.y - parentCenter.y, c.x - parentCenter.x);
-      });
-      preferredAngle = largestGapMidAngle(childAngles) ?? -Math.PI / 2;
-    } else {
-      const outwardX = parentCenter.x - rootCenter.x;
-      const outwardY = parentCenter.y - rootCenter.y;
-      if (Math.hypot(outwardX, outwardY) > 1) {
-        preferredAngle = Math.atan2(outwardY, outwardX);
-      } else {
-        const incomingEdge = hierarchyEdges.find((edge) => edge.target === parentId);
-        const incoming = incomingEdge ? nodeById.get(incomingEdge.source) : undefined;
-        if (incoming) {
-          const incomingCenter = nodeCenter(incoming);
-          preferredAngle = Math.atan2(
-            parentCenter.y - incomingCenter.y,
-            parentCenter.x - incomingCenter.x,
-          );
-        } else {
-          preferredAngle = -Math.PI / 2;
-        }
-      }
-    }
-
-    const childAngles = children.map((child) => {
-      const c = nodeCenter(child);
-      return Math.atan2(c.y - parentCenter.y, c.x - parentCenter.x);
-    });
-    const candidateOffsets = [
-      0,
-      0.3,
-      -0.3,
-      0.56,
-      -0.56,
-      0.84,
-      -0.84,
-      1.12,
-      -1.12,
-      1.42,
-      -1.42,
-      1.74,
-      -1.74,
-    ];
+    let angle: number;
+    let distance: number;
 
     const baseDistByParentType: Record<string, number> = {
-      root: 208,
-      domain: 172,
+      root: 240,
+      domain: 180,
       goal: 160,
       feature: 148,
       task: 142,
     };
-    const baseDist = baseDistByParentType[parent.data.type] ?? 150;
-    const childDims = NODE_SIZE_FALLBACK[childType] ?? NODE_SIZE_FALLBACK.task;
+    distance = baseDistByParentType[parent.data.type] ?? 150;
 
-    type PlacementCandidate = {
-      x: number;
-      y: number;
-      overlapCount: number;
-      minClearance: number;
-      dist: number;
-      siblingAnglePenalty: number;
-    };
-
-    const candidateDistances = [1, 1.16, 1.34, 1.54, 1.78, 2.04, 2.32].map(
-      (scale) => (baseDist + Math.min(40, children.length * 7)) * scale,
-    );
-    const placementPad = 14;
-    const existingRects = project.nodes.map((node) => {
-      const dims = nodeDims(node);
-      return {
-        id: node.id,
-        x: node.position.x,
-        y: node.position.y,
-        w: dims.w,
-        h: dims.h,
-      };
-    });
-
-    const evaluateCandidate = (angle: number, dist: number): PlacementCandidate => {
-      const center = {
-        x: parentCenter.x + Math.cos(angle) * dist,
-        y: parentCenter.y + Math.sin(angle) * dist,
-      };
-      const rect = {
-        x: center.x - childDims.w / 2,
-        y: center.y - childDims.h / 2,
-        w: childDims.w,
-        h: childDims.h,
-      };
-
-      let overlapCount = 0;
-      let minClearance = Number.POSITIVE_INFINITY;
-      for (const existing of existingRects) {
-        const clearance = rectClearance(rect, existing);
-        minClearance = Math.min(minClearance, clearance);
-        if (clearance < placementPad) overlapCount++;
-      }
-
-      const nearestSiblingAngle = childAngles.reduce(
-        (best, existing) => Math.min(best, angleDistance(existing, angle)),
-        Math.PI,
-      );
-
-      return {
-        x: rect.x,
-        y: rect.y,
-        overlapCount,
-        minClearance,
-        dist,
-        siblingAnglePenalty: Math.max(0, 0.34 - nearestSiblingAngle),
-      };
-    };
-
-    let bestPlacement: PlacementCandidate | null = null;
-    for (const dist of candidateDistances) {
-      for (const offset of candidateOffsets) {
-        const angle = preferredAngle + offset;
-        const candidate = evaluateCandidate(angle, dist);
-        const candidateScore =
-          candidate.overlapCount * 10000
-          + candidate.siblingAnglePenalty * 620
-          + candidate.dist * 0.18
-          - Math.min(candidate.minClearance, 220) * 2.1;
-        const bestScore = !bestPlacement
-          ? Number.POSITIVE_INFINITY
-          : bestPlacement.overlapCount * 10000
-            + bestPlacement.siblingAnglePenalty * 620
-            + bestPlacement.dist * 0.18
-            - Math.min(bestPlacement.minClearance, 220) * 2.1;
-
-        if (candidateScore < bestScore) {
-          bestPlacement = candidate;
-        }
-      }
-
-      if (
-        bestPlacement
-        && bestPlacement.overlapCount === 0
-        && bestPlacement.minClearance >= placementPad
-      ) {
-        break;
+    if (parent.id === root.id) {
+      // Add domains sequentially in a circle
+      const step = (Math.PI * 2) / Math.max(6, children.length + 1);
+      angle = -Math.PI / 2 + children.length * step;
+    } else {
+      // Follow the direction of the parent from the root
+      const dx = parentCenter.x - rootCenter.x;
+      const dy = parentCenter.y - rootCenter.y;
+      
+      if (Math.hypot(dx, dy) < 1) {
+        angle = Math.PI / 2; // Fallback
+      } else {
+        const parentAngle = Math.atan2(dy, dx);
+        // Fan out children slightly based on index
+        const fanStep = 0.25;
+        const fanOffset = (children.length - (children.length / 2)) * fanStep;
+        angle = parentAngle + fanOffset;
       }
     }
-
-    const childCenter = bestPlacement
-      ? {
-          x: bestPlacement.x + childDims.w / 2,
-          y: bestPlacement.y + childDims.h / 2,
-        }
-      : {
-          x: parentCenter.x + Math.cos(preferredAngle) * baseDist,
-          y: parentCenter.y + Math.sin(preferredAngle) * baseDist,
-        };
 
     const newNode: MindNode = {
       id: newId,
       type: childType,
       position: {
-        x: childCenter.x - childDims.w / 2,
-        y: childCenter.y - childDims.h / 2,
+        x: parentCenter.x + Math.cos(angle) * distance - 80, // rough half width
+        y: parentCenter.y + Math.sin(angle) * distance - 35, // rough half height
       },
       data: {
         label: "",
@@ -611,7 +486,7 @@ export const useStore = create<MindStore>((set, get) => ({
     });
   },
 
-  applyLayout: () => {
+  applyLayout: (onComplete) => {
     const project = get().activeProject();
     if (!project) return;
 
@@ -622,5 +497,10 @@ export const useStore = create<MindStore>((set, get) => ({
         p.id === project.id ? { ...p, nodes, edges } : p,
       ),
     });
+
+    if (onComplete) {
+      // Use setTimeout to ensure the React Flow has received the new layout state
+      setTimeout(onComplete, 0);
+    }
   },
 }));

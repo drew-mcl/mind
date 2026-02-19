@@ -75,8 +75,12 @@ export function GoalNode({ id, data, selected }: NodeProps<MindNode>) {
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
-      inputRef.current.focus();
-      inputRef.current.select();
+      const input = inputRef.current;
+      const timer = setTimeout(() => {
+        input.focus();
+        input.select();
+      }, 50);
+      return () => clearTimeout(timer);
     }
   }, [isEditing]);
 
@@ -114,29 +118,30 @@ export function GoalNode({ id, data, selected }: NodeProps<MindNode>) {
         }}
         ref={cardRef}
       >
-        <div className="flex items-start gap-3">
-          <span className="mt-[6px] shrink-0">
+        <div className="flex items-center gap-3">
+          <span className="shrink-0 flex items-center justify-center">
             <StatusDot status={status} />
           </span>
           {isEditing ? (
             <input
               ref={inputRef}
               defaultValue={data.label}
+              placeholder="Goal title..."
               onBlur={commitEdit}
               onKeyDown={(e) => {
                 if (e.key === "Enter") commitEdit();
                 if (e.key === "Escape") setEditingNode(null);
               }}
-              className="min-w-0 flex-1 bg-transparent text-[15px] font-black tracking-tight text-text-primary outline-none"
+              className="w-full min-w-0 flex-1 bg-transparent text-[15px] font-black tracking-tight text-text-primary outline-none placeholder:text-text-muted/50"
             />
           ) : (
-            <span className="min-w-0 text-[15px] font-black leading-[1.3] tracking-tight text-text-primary whitespace-normal break-words">
+            <span className="min-w-0 text-[15px] font-black leading-tight tracking-tight text-text-primary whitespace-normal break-words">
               {data.label || "Untitled Goal"}
             </span>
           )}
         </div>
         {!isEditing && (
-          <div className="mt-2.5 flex items-center gap-2 pl-[20px]">
+          <div className="mt-2.5 flex items-center gap-2 pl-[23px]">
             <span
               className="inline-block rounded px-1.5 py-[0.5px] font-mono text-[9px] font-bold uppercase tracking-wider"
               style={statusPillStyle[status]}

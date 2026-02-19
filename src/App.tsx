@@ -29,15 +29,13 @@ export default function App() {
     });
   }, [setProjects, setActiveProject]);
 
-  // Apply layout whenever a project becomes active and is fully loaded
-  const activeProject = useStore((s) =>
-    s.projects.find((p) => p.id === s.activeProjectId),
-  );
+  // Apply layout only when switching projects or on initial load
   useEffect(() => {
-    if (activeProject && activeProject.nodes.length > 0) {
+    const project = useStore.getState().projects.find(p => p.id === activeProjectId);
+    if (project && project.nodes.length > 0) {
       applyLayout();
     }
-  }, [activeProjectId, activeProject?.nodes.length, applyLayout]);
+  }, [activeProjectId, applyLayout]);
 
   useDebouncedSave();
 
