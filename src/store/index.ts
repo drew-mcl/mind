@@ -142,6 +142,7 @@ export const useStore = create<MindStore>((set, get) => ({
   focusedNodeId: null,
   sidebarCollapsed: false,
   autoFocusEnabled: true,
+  currentDensity: "balanced" as LayoutDensity,
   confirmationModal: {
     isOpen: false,
     title: "",
@@ -586,6 +587,7 @@ export const useStore = create<MindStore>((set, get) => ({
     const { nodes, edges } = applyRadialLayout(project.nodes, project.edges, density);
     set({
       layoutVersion: get().layoutVersion + 1,
+      currentDensity: density,
       projects: get().projects.map((p) =>
         p.id === project.id ? { ...p, nodes, edges } : p,
       ),

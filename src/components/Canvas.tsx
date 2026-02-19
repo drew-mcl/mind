@@ -393,7 +393,12 @@ export function Canvas() {
     const isManualRearrange = layoutVersion > lastLayoutVersionRef.current;
     lastLayoutVersionRef.current = layoutVersion;
 
-    if (prevProjectIdRef.current !== projectId || isManualRearrange) {
+    // Only perform auto-centering if:
+    // 1. It's a new project AND data is finally loaded (nodes > 0)
+    // 2. OR it's a manual rearrange
+    const isNewProjectLoad = prevProjectIdRef.current !== projectId && project.nodes.length > 0;
+
+    if (isNewProjectLoad || isManualRearrange) {
       if (autoFocusEnabled || isManualRearrange) {
         const rf = flowRef.current;
         const rootNode = project.nodes.find(n => n.data.type === "root");
@@ -402,24 +407,29 @@ export function Canvas() {
           if (rootNode) {
             const { x, y } = nodeCenter(rootNode);
             rf.setCenter(x, y, { zoom: 0.85, duration: isManualRearrange ? 400 : 0 });
-          } else if (prevProjectIdRef.current !== projectId) {
+          } else if (isNewProjectLoad) {
             rf.fitView(FIT_VIEW_OPTIONS);
           }
         });
       }
-      prevProjectIdRef.current = projectId;
+      
+      if (isNewProjectLoad) {
+        prevProjectIdRef.current = projectId;
+      }
     }
   }, [projectId, project, autoFocusEnabled, layoutVersion]);
 
   if (!project) {
     return (
-      <div className="flex h-full items-center justify-center text-text-tertiary text-sm">
+      <div className="flex h-full items-center justify-center text-text-tertiary text-sm font-medium">
         Select a project to begin
       </div>
     );
   }
 
-  const showGettingStartedTip = project.nodes.length <= 1;
+  // Only show tip if project is loaded AND truly empty (just root)
+  const isLoaded = project.nodes.length > 0;
+  const showGettingStartedTip = isLoaded && project.nodes.length <= 1;
 
   return (
     <div className="relative h-full">

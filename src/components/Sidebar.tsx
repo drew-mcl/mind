@@ -22,6 +22,7 @@ export function Sidebar() {
   const setSidebarCollapsed = useStore((s) => s.setSidebarCollapsed);
   const autoFocusEnabled = useStore((s) => s.autoFocusEnabled);
   const setAutoFocusEnabled = useStore((s) => s.setAutoFocusEnabled);
+  const currentDensity = useStore((s) => s.currentDensity);
 
   const [isCreating, setIsCreating] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -201,21 +202,36 @@ export function Sidebar() {
             <div className="grid grid-cols-3 gap-1">
               <button
                 onClick={() => applyLayout("compact")}
-                className="rounded-md border border-border py-1 text-[10px] font-bold text-text-tertiary hover:bg-surface-hover hover:text-text-secondary transition-all"
+                className={cn(
+                  "rounded-md border py-1 text-[10px] font-bold transition-all",
+                  currentDensity === "compact" 
+                    ? "bg-accent text-white border-accent shadow-sm" 
+                    : "border-border text-text-tertiary hover:bg-surface-hover hover:text-text-secondary"
+                )}
                 title="Super close together"
               >
                 Compact
               </button>
               <button
                 onClick={() => applyLayout("balanced")}
-                className="rounded-md border border-border py-1 text-[10px] font-bold text-text-tertiary hover:bg-surface-hover hover:text-text-secondary transition-all"
+                className={cn(
+                  "rounded-md border py-1 text-[10px] font-bold transition-all",
+                  currentDensity === "balanced" 
+                    ? "bg-accent text-white border-accent shadow-sm" 
+                    : "border-border text-text-tertiary hover:bg-surface-hover hover:text-text-secondary"
+                )}
                 title="Balanced spacing (Default)"
               >
                 Normal
               </button>
               <button
                 onClick={() => applyLayout("exploded")}
-                className="rounded-md border border-border py-1 text-[10px] font-bold text-text-tertiary hover:bg-surface-hover hover:text-text-secondary transition-all"
+                className={cn(
+                  "rounded-md border py-1 text-[10px] font-bold transition-all",
+                  currentDensity === "exploded" 
+                    ? "bg-accent text-white border-accent shadow-sm" 
+                    : "border-border text-text-tertiary hover:bg-surface-hover hover:text-text-secondary"
+                )}
                 title="Spread everything right out"
               >
                 Exploded
