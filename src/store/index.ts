@@ -4,7 +4,7 @@ import { useShallow } from "zustand/shallow";
 import { applyNodeChanges, applyEdgeChanges } from "@xyflow/react";
 import type { MindStore, MindNode, MindEdge, ProjectData } from "@/types";
 import { applyRadialLayout } from "@/lib/layout";
-import { fetchProject } from "@/lib/api";
+import { fetchProject, deleteProject as deleteProjectApi } from "@/lib/api";
 
 let nodeCounter = 0;
 
@@ -484,6 +484,40 @@ export const useStore = create<MindStore>((set, get) => ({
       selectedNodeId: null,
       editingNodeId: null,
     });
+  },
+
+  deleteProject: async (id) => {
+    const { projects, activeProjectId } = get();
+    const project = projects.find((p) => p.id === id);
+    if (!project) return;
+
+    if (!window.confirm(`Are you sure you want to delete the project "${project.name}"? This cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      set({ saveStatus: "saving" });
+      await deleteProjectApi(id);
+      
+      const newProjects = projects.filter((p) => p.id !== id);
+      set({
+        projects: newProjects,
+        saveStatus: "saved",
+      });
+
+      if (activeProjectId === id) {
+        const nextId = newProjects.length > 0 ? newProjects[0].id : null;
+        set({
+          activeProjectId: nextId,
+          selectedNodeId: null,
+          editingNodeId: null,
+          focusedNodeId: null,
+          lockedNodeId: null,
+        });
+      }
+    } catch (err) {
+      set({ saveStatus: "error", saveError: "Failed to delete project" });
+    }
   },
 
   applyLayout: (onComplete) => {

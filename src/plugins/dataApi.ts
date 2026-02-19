@@ -90,6 +90,25 @@ export function dataApi(): Plugin {
           return;
         }
 
+        // DELETE /api/projects/:id — delete a project
+        if (req.method === "DELETE") {
+          const match = req.url.match(/^\/api\/projects\/([^?]+)$/);
+          if (match) {
+            const id = decodeURIComponent(match[1]);
+            const filePath = path.join(DATA_DIR, `${id}.json`);
+            if (fs.existsSync(filePath)) {
+              fs.unlinkSync(filePath);
+              res.setHeader("Content-Type", "application/json");
+              res.end(JSON.stringify({ ok: true }));
+              return;
+            } else {
+              res.statusCode = 404;
+              res.end(JSON.stringify({ error: "Project not found" }));
+              return;
+            }
+          }
+        }
+
         next();
       });
     },

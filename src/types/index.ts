@@ -75,6 +75,7 @@ export type MindStore = {
   deleteNode: (nodeId: string) => void;
   toggleGoal: (nodeId: string) => void;
   createProject: (name: string) => void;
+  deleteProject: (id: string) => void;
   applyLayout: (onComplete?: () => void) => void;
 
   // Connect mode

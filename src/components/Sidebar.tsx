@@ -10,6 +10,7 @@ export function Sidebar() {
   const setActiveProject = useStore((s) => s.setActiveProject);
   const applyLayout = useStore((s) => s.applyLayout);
   const createProject = useStore((s) => s.createProject);
+  const deleteProject = useStore((s) => s.deleteProject);
   const addChildNode = useStore((s) => s.addChildNode);
   const connectMode = useStore((s) => s.connectMode);
   const setConnectMode = useStore((s) => s.setConnectMode);
@@ -119,18 +120,33 @@ export function Sidebar() {
           </h2>
           <div className="space-y-px">
             {projects.map((p) => (
-              <button
-                key={p.id}
-                onClick={() => setActiveProject(p.id)}
-                className={cn(
-                  "w-full rounded-lg px-2.5 py-1.5 text-left text-[13px] transition-colors",
-                  p.id === activeProjectId
-                    ? "bg-accent-subtle text-accent font-medium"
-                    : "text-text-secondary hover:bg-surface-hover",
-                )}
-              >
-                {p.name}
-              </button>
+              <div key={p.id} className="group relative flex items-center">
+                <button
+                  onClick={() => setActiveProject(p.id)}
+                  className={cn(
+                    "w-full rounded-lg px-2.5 py-1.5 text-left text-[13px] transition-colors pr-8",
+                    p.id === activeProjectId
+                      ? "bg-accent-subtle text-accent font-medium"
+                      : "text-text-secondary hover:bg-surface-hover",
+                  )}
+                >
+                  {p.name}
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteProject(p.id);
+                  }}
+                  className="absolute right-1 opacity-0 group-hover:opacity-100 flex h-6 w-6 items-center justify-center rounded-md text-text-tertiary hover:bg-red-50 hover:text-red-500 transition-all"
+                  title="Delete project"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 6h18" />
+                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                  </svg>
+                </button>
+              </div>
             ))}
           </div>
 

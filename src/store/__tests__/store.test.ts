@@ -1,6 +1,13 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { useStore } from "@/store";
 import type { MindNode, MindEdge } from "@/types";
+
+// Mock API
+vi.mock("@/lib/api", () => ({
+  fetchProject: vi.fn(),
+  deleteProject: vi.fn().mockResolvedValue(undefined),
+  saveProject: vi.fn().mockResolvedValue(undefined),
+}));
 
 const NODE_DIMS: Record<string, { w: number; h: number }> = {
   root: { w: 160, h: 56 },
@@ -380,6 +387,49 @@ describe("useStore", () => {
       useStore.getState().deleteNode(childId);
 
       expect(useStore.getState().selectedNodeId).toBeNull();
+    });
+  });
+
+  describe("deleteProject", () => {
+    beforeEach(() => {
+      useStore.getState().createProject("Project 1");
+      useStore.getState().createProject("Project 2");
+      // Mock confirm to always return true
+      window.confirm = () => true;
+    });
+
+    it("removes the project from the store", async () => {
+      const p1 = useStore.getState().projects[0];
+      await useStore.getState().deleteProject(p1.id);
+
+      const state = useStore.getState();
+      expect(state.projects).toHaveLength(1);
+      expect(state.projects.find(p => p.id === p1.id)).toBeUndefined();
+    });
+
+    it("switches to the next project if deleting the active one", async () => {
+      const stateBefore = useStore.getState();
+      const activeId = stateBefore.activeProjectId!;
+      const otherId = stateBefore.projects.find(p => p.id !== activeId)!.id;
+
+      await useStore.getState().deleteProject(activeId);
+
+      const stateAfter = useStore.getState();
+      expect(stateAfter.activeProjectId).toBe(otherId);
+    });
+
+    it("clears selection and focus state when deleting active project", async () => {
+      const activeId = useStore.getState().activeProjectId!;
+      useStore.getState().setSelectedNode("some-node");
+      useStore.getState().setFocusedNode("some-node");
+      useStore.getState().setLockedNode("some-node");
+
+      await useStore.getState().deleteProject(activeId);
+
+      const state = useStore.getState();
+      expect(state.selectedNodeId).toBeNull();
+      expect(state.focusedNodeId).toBeNull();
+      expect(state.lockedNodeId).toBeNull();
     });
   });
 });

@@ -26,3 +26,12 @@ export async function saveProject(project: ProjectData): Promise<void> {
     throw new Error(`Failed to save project (${res.status})`);
   }
 }
+
+export async function deleteProject(id: string): Promise<void> {
+  const res = await fetch(`/api/projects/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to delete project (${res.status})`);
+  }
+}
