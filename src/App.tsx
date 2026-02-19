@@ -3,6 +3,7 @@ import { useStore } from "@/store";
 import { fetchProjectSummaries } from "@/lib/api";
 import { Canvas } from "@/components/Canvas";
 import { Sidebar } from "@/components/Sidebar";
+import { ConfirmationModal } from "@/components/ConfirmationModal";
 import { useDebouncedSave } from "@/hooks/useDebouncedSave";
 
 export default function App() {
@@ -75,6 +76,7 @@ export default function App() {
         )}
         <Canvas />
       </div>
+      <ConfirmationModal />
     </div>
   );
 }

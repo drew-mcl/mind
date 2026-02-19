@@ -50,6 +50,14 @@ export type MindStore = {
   sidebarCollapsed: boolean;
   autoFocusEnabled: boolean;
   lockedNodeId: string | null;
+  confirmationModal: {
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    confirmLabel?: string;
+    variant?: "danger" | "primary";
+  };
 
   // Derived
   activeProject: () => ProjectData | undefined;
@@ -65,6 +73,8 @@ export type MindStore = {
   setSidebarCollapsed: (collapsed: boolean) => void;
   setAutoFocusEnabled: (enabled: boolean) => void;
   setLockedNode: (id: string | null) => void;
+  openConfirmationModal: (options: Omit<MindStore["confirmationModal"], "isOpen">) => void;
+  closeConfirmationModal: () => void;
 
   // Node/edge mutations
   onNodesChange: OnNodesChange<MindNode>;
@@ -73,9 +83,11 @@ export type MindStore = {
   addChildNode: (parentId: string) => void;
   addBlockingEdge: (sourceId: string, targetId: string) => void;
   deleteNode: (nodeId: string) => void;
+  performDeleteNode: (nodeId: string) => void;
   toggleGoal: (nodeId: string) => void;
   createProject: (name: string) => void;
   deleteProject: (id: string) => void;
+  performDeleteProject: (id: string) => void;
   applyLayout: (onComplete?: () => void) => void;
 
   // Connect mode

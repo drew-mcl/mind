@@ -90,12 +90,6 @@ export function NodeDetail() {
   const canDemote = data.type === "goal";
 
   const handleDelete = () => {
-    if (childCount > 0) {
-      const confirmed = window.confirm(
-        `Delete "${data.label || "Untitled"}" and ${childCount} ${childCount === 1 ? "child" : "children"}?`,
-      );
-      if (!confirmed) return;
-    }
     deleteNode(node.id);
   };
 

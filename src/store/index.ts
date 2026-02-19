@@ -143,6 +143,12 @@ export const useStore = create<MindStore>((set, get) => ({
   sidebarCollapsed: false,
   autoFocusEnabled: true,
   lockedNodeId: null,
+  confirmationModal: {
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  },
   connectMode: "off",
   connectSourceId: null,
 
@@ -200,6 +206,14 @@ export const useStore = create<MindStore>((set, get) => ({
   setAutoFocusEnabled: (autoFocusEnabled) => set({ autoFocusEnabled }),
 
   setLockedNode: (lockedNodeId) => set({ lockedNodeId }),
+
+  openConfirmationModal: (options) => set({
+    confirmationModal: { ...options, isOpen: true }
+  }),
+
+  closeConfirmationModal: () => set({
+    confirmationModal: { ...get().confirmationModal, isOpen: false }
+  }),
 
   setConnectMode: (mode) => set({ connectMode: mode, connectSourceId: null }),
 
@@ -431,6 +445,45 @@ export const useStore = create<MindStore>((set, get) => ({
     const project = get().activeProject();
     if (!project) return;
 
+    const node = project.nodes.find((n) => n.id === nodeId);
+    if (!node) return;
+
+    // Check if node has descendants via hierarchy edges
+    const hasChildren = project.edges.some(
+      (e) => e.source === nodeId && e.data?.edgeType === "hierarchy"
+    );
+
+    if (hasChildren) {
+      // Count descendants for the message
+      const ids = new Set<string>();
+      const collect = (id: string) => {
+        for (const edge of project.edges) {
+          if (edge.source === id && edge.data?.edgeType === "hierarchy" && !ids.has(edge.target)) {
+            ids.add(edge.target);
+            collect(edge.target);
+          }
+        }
+      };
+      collect(nodeId);
+      const count = ids.size;
+
+      get().openConfirmationModal({
+        title: "Delete Node",
+        message: `Are you sure you want to delete "${node.data.label || "Untitled"}" and its ${count} ${count === 1 ? "child" : "children"}?`,
+        confirmLabel: "Delete Everything",
+        variant: "danger",
+        onConfirm: () => get().performDeleteNode(nodeId),
+      });
+    } else {
+      // Single node with no children, delete immediately or could still confirm
+      get().performDeleteNode(nodeId);
+    }
+  },
+
+  performDeleteNode: (nodeId) => {
+    const project = get().activeProject();
+    if (!project) return;
+
     // Collect all descendant node IDs recursively via hierarchy edges
     const idsToDelete = new Set<string>();
     const collect = (id: string) => {
@@ -486,15 +539,23 @@ export const useStore = create<MindStore>((set, get) => ({
     });
   },
 
-  deleteProject: async (id) => {
-    const { projects, activeProjectId } = get();
+  deleteProject: (id) => {
+    const { projects } = get();
     const project = projects.find((p) => p.id === id);
     if (!project) return;
 
-    if (!window.confirm(`Are you sure you want to delete the project "${project.name}"? This cannot be undone.`)) {
-      return;
-    }
+    get().openConfirmationModal({
+      title: "Delete Project",
+      message: `Are you sure you want to delete "${project.name}"? This action cannot be undone.`,
+      confirmLabel: "Delete Project",
+      variant: "danger",
+      onConfirm: () => get().performDeleteProject(id),
+    });
+  },
 
+  performDeleteProject: async (id) => {
+    const { projects, activeProjectId } = get();
+    
     try {
       set({ saveStatus: "saving" });
       await deleteProjectApi(id);
@@ -515,6 +576,8 @@ export const useStore = create<MindStore>((set, get) => ({
           lockedNodeId: null,
         });
       }
+      
+      get().closeConfirmationModal();
     } catch (err) {
       set({ saveStatus: "error", saveError: "Failed to delete project" });
     }

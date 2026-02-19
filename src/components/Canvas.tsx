@@ -157,26 +157,6 @@ export function Canvas() {
         const node = project?.nodes.find((n) => n.id === selectedNodeId);
         if (!node || node.data.type === "root") return;
 
-        // Count descendants for confirmation
-        const edges = project?.edges ?? [];
-        let count = 0;
-        const visit = (id: string) => {
-          for (const edge of edges) {
-            if (edge.source === id && edge.data?.edgeType === "hierarchy") {
-              count++;
-              visit(edge.target);
-            }
-          }
-        };
-        visit(selectedNodeId);
-
-        if (count > 0) {
-          const confirmed = window.confirm(
-            `Delete "${node.data.label || "Untitled"}" and ${count} ${count === 1 ? "child" : "children"}?`,
-          );
-          if (!confirmed) return;
-        }
-
         deleteNode(selectedNodeId);
       }
 

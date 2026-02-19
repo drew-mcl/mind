@@ -400,7 +400,7 @@ describe("useStore", () => {
 
     it("removes the project from the store", async () => {
       const p1 = useStore.getState().projects[0];
-      await useStore.getState().deleteProject(p1.id);
+      await useStore.getState().performDeleteProject(p1.id);
 
       const state = useStore.getState();
       expect(state.projects).toHaveLength(1);
@@ -412,7 +412,7 @@ describe("useStore", () => {
       const activeId = stateBefore.activeProjectId!;
       const otherId = stateBefore.projects.find(p => p.id !== activeId)!.id;
 
-      await useStore.getState().deleteProject(activeId);
+      await useStore.getState().performDeleteProject(activeId);
 
       const stateAfter = useStore.getState();
       expect(stateAfter.activeProjectId).toBe(otherId);
@@ -424,7 +424,7 @@ describe("useStore", () => {
       useStore.getState().setFocusedNode("some-node");
       useStore.getState().setLockedNode("some-node");
 
-      await useStore.getState().deleteProject(activeId);
+      await useStore.getState().performDeleteProject(activeId);
 
       const state = useStore.getState();
       expect(state.selectedNodeId).toBeNull();
