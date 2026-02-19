@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"io"
+	"os"
 	"strings"
 
 	"github.com/drewbolles/mind/internal/data"
@@ -34,7 +36,7 @@ func runTree(projectID string) error {
 		if p == nil {
 			return fmt.Errorf("project %q not found", projectID)
 		}
-		printProject(p)
+		RenderProject(os.Stdout, p)
 		return nil
 	}
 
@@ -42,14 +44,14 @@ func runTree(projectID string) error {
 		if i > 0 {
 			fmt.Println()
 		}
-		printProject(p)
+		RenderProject(os.Stdout, p)
 	}
 
 	return nil
 }
 
-// printProject renders a single project as a tree.
-func printProject(p *data.Project) {
+// RenderProject renders a single project as a tree to the provided writer.
+func RenderProject(w io.Writer, p *data.Project) {
 	// Build lookup maps
 	nodeMap := make(map[string]*data.Node)
 	for i := range p.Nodes {
@@ -93,22 +95,22 @@ func printProject(p *data.Project) {
 		if label == "" {
 			label = p.Name
 		}
-		fmt.Printf("%s%s%s\n", bold, label, reset)
+		fmt.Fprintf(w, "%s%s%s\n", bold, label, reset)
 		kids := children[roots[0]]
 		for i, childID := range kids {
-			printTreeNode(childID, nodeMap, children, blockers, "", i == len(kids)-1)
+			renderTreeNode(w, childID, nodeMap, children, blockers, "", i == len(kids)-1)
 		}
 	} else {
 		// Multiple roots — print project name as header
-		fmt.Printf("%s%s%s\n", bold, p.Name, reset)
+		fmt.Fprintf(w, "%s%s%s\n", bold, p.Name, reset)
 		for i, rootID := range roots {
-			printTreeNode(rootID, nodeMap, children, blockers, "", i == len(roots)-1)
+			renderTreeNode(w, rootID, nodeMap, children, blockers, "", i == len(roots)-1)
 		}
 	}
 }
 
-// printTreeNode recursively prints a node and its children.
-func printTreeNode(id string, nodeMap map[string]*data.Node, children map[string][]string, blockers map[string][]string, prefix string, isLast bool) {
+// renderTreeNode recursively prints a node and its children.
+func renderTreeNode(w io.Writer, id string, nodeMap map[string]*data.Node, children map[string][]string, blockers map[string][]string, prefix string, isLast bool) {
 	node, ok := nodeMap[id]
 	if !ok {
 		return
@@ -168,7 +170,7 @@ func printTreeNode(id string, nodeMap map[string]*data.Node, children map[string
 
 	label := truncate(node.Data.Label, 60)
 
-	fmt.Printf("%s%s%s%s%s %s%s%s%s%s\n",
+	fmt.Fprintf(w, "%s%s%s%s%s %s%s%s%s%s\n",
 		gray, prefix, connector, reset,
 		shapeColor, shape, reset,
 		labelStyle, " "+label, reset+descStr+metaStr)
@@ -191,7 +193,7 @@ func printTreeNode(id string, nodeMap map[string]*data.Node, children map[string
 	}
 
 	for i, childID := range visibleKids {
-		printTreeNode(childID, nodeMap, children, blockers, childPrefix, i == len(visibleKids)-1)
+		renderTreeNode(w, childID, nodeMap, children, blockers, childPrefix, i == len(visibleKids)-1)
 	}
 }
 

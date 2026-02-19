@@ -40,6 +40,11 @@ type Project struct {
 	Edges []Edge `json:"edges"`
 }
 
+type ProjectSummary struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
 // LoadProject reads and parses a single JSON project file.
 func LoadProject(path string) (*Project, error) {
 	data, err := os.ReadFile(path)
@@ -55,6 +60,23 @@ func LoadProject(path string) (*Project, error) {
 	return &p, nil
 }
 
+// SaveProject saves a project to a JSON file using an atomic write.
+func SaveProject(dataDir string, p *Project) error {
+	body, err := json.MarshalIndent(p, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	filePath := filepath.Join(dataDir, fmt.Sprintf("%s.json", p.ID))
+	tmpPath := filePath + ".tmp"
+
+	if err := os.WriteFile(tmpPath, body, 0644); err != nil {
+		return err
+	}
+
+	return os.Rename(tmpPath, filePath)
+}
+
 // LoadAllProjects loads all JSON files from the given directory.
 func LoadAllProjects(dataDir string) ([]*Project, error) {
 	matches, err := filepath.Glob(filepath.Join(dataDir, "*.json"))
@@ -62,12 +84,11 @@ func LoadAllProjects(dataDir string) ([]*Project, error) {
 		return nil, err
 	}
 
-	if len(matches) == 0 {
-		return nil, fmt.Errorf("no JSON files found in %s", dataDir)
-	}
-
 	var projects []*Project
 	for _, path := range matches {
+		if strings.HasSuffix(path, ".tmp") {
+			continue
+		}
 		p, err := LoadProject(path)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "warning: skipping %s: %v\n", path, err)
@@ -77,6 +98,29 @@ func LoadAllProjects(dataDir string) ([]*Project, error) {
 	}
 
 	return projects, nil
+}
+
+// LoadProjectSummaries returns a list of project metadata without loading full node data.
+func LoadProjectSummaries(dataDir string) ([]ProjectSummary, error) {
+	matches, err := filepath.Glob(filepath.Join(dataDir, "*.json"))
+	if err != nil {
+		return nil, err
+	}
+
+	var summaries []ProjectSummary
+	for _, path := range matches {
+		if strings.HasSuffix(path, ".tmp") {
+			continue
+		}
+		// Still need to parse enough to get the name and id, or we could infer id from filename.
+		// For now, let's just parse the full thing since Go is fast, but we return a smaller slice.
+		p, err := LoadProject(path)
+		if err != nil {
+			continue
+		}
+		summaries = append(summaries, ProjectSummary{ID: p.ID, Name: p.Name})
+	}
+	return summaries, nil
 }
 
 // VaultDir returns the path to ~/.mind/, creating it if needed.

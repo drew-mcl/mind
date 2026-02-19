@@ -8,7 +8,7 @@ tsconfig.tsbuildinfo
 /mind
 
 # Data lives in ~/.mind/ vault
-data/
+/data/
 
 # IDE / tooling
 .claude/

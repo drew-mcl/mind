@@ -19,7 +19,10 @@ export function dataApi(): Plugin {
         if (!req.url?.startsWith("/api/projects")) return next();
 
         // GET /api/projects — list all projects
-        if (req.method === "GET" && req.url === "/api/projects") {
+        if (req.method === "GET" && req.url.startsWith("/api/projects")) {
+          const url = new URL(req.url, `http://${req.headers.host}`);
+          const isSummary = url.searchParams.get("summary") === "true";
+
           ensureDataDir();
           const files = fs
             .readdirSync(DATA_DIR)
@@ -27,7 +30,11 @@ export function dataApi(): Plugin {
 
           const projects = files.map((f) => {
             const raw = fs.readFileSync(path.join(DATA_DIR, f), "utf-8");
-            return JSON.parse(raw);
+            const data = JSON.parse(raw);
+            if (isSummary) {
+              return { id: data.id, name: data.name };
+            }
+            return data;
           });
 
           res.setHeader("Content-Type", "application/json");
@@ -35,9 +42,24 @@ export function dataApi(): Plugin {
           return;
         }
 
-        // PUT /api/projects/:id — save a project
+        // GET /api/projects/:id — load a specific project
+        if (req.method === "GET") {
+          const match = req.url.match(/^\/api\/projects\/([^?]+)$/);
+          if (match) {
+            const id = decodeURIComponent(match[1]);
+            const filePath = path.join(DATA_DIR, `${id}.json`);
+            if (fs.existsSync(filePath)) {
+              const raw = fs.readFileSync(filePath, "utf-8");
+              res.setHeader("Content-Type", "application/json");
+              res.end(raw);
+              return;
+            }
+          }
+        }
+
+        // PUT /api/projects/:id — save a project with atomic write
         if (req.method === "PUT") {
-          const match = req.url.match(/^\/api\/projects\/(.+)$/);
+          const match = req.url.match(/^\/api\/projects\/([^?]+)$/);
           if (!match) return next();
 
           const id = decodeURIComponent(match[1]);
@@ -48,9 +70,19 @@ export function dataApi(): Plugin {
           req.on("end", () => {
             ensureDataDir();
             const filePath = path.join(DATA_DIR, `${id}.json`);
-            fs.writeFileSync(filePath, body, "utf-8");
-            res.setHeader("Content-Type", "application/json");
-            res.end(JSON.stringify({ ok: true }));
+            const tmpPath = path.join(DATA_DIR, `${id}.json.tmp`);
+
+            try {
+              // Atomic write: write to temp file then rename
+              fs.writeFileSync(tmpPath, body, "utf-8");
+              fs.renameSync(tmpPath, filePath);
+              res.setHeader("Content-Type", "application/json");
+              res.end(JSON.stringify({ ok: true }));
+            } catch (err) {
+              console.error("Save error:", err);
+              res.statusCode = 500;
+              res.end(JSON.stringify({ error: "Failed to save file" }));
+            }
           });
           return;
         }
