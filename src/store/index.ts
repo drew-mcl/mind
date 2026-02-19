@@ -4,6 +4,7 @@ import { useShallow } from "zustand/shallow";
 import { applyNodeChanges, applyEdgeChanges } from "@xyflow/react";
 import type { MindStore, MindNode, MindEdge, ProjectData } from "@/types";
 import { applyRadialLayout } from "@/lib/layout";
+import { fetchProject } from "@/lib/api";
 
 let nodeCounter = 0;
 
@@ -136,7 +137,27 @@ export const useStore = create<MindStore>((set, get) => ({
     }
   },
 
-  setActiveProject: (id) => set({ activeProjectId: id, selectedNodeId: null, editingNodeId: null }),
+  setActiveProject: async (id) => {
+    const { projects } = get();
+    const existing = projects.find((p) => p.id === id);
+
+    // If we only have summary data (no nodes), fetch the full project
+    if (existing && existing.nodes.length === 0) {
+      try {
+        set({ saveStatus: "saving" });
+        const fullProject = await fetchProject(id);
+        set({
+          projects: projects.map((p) => (p.id === id ? fullProject : p)),
+          saveStatus: "saved",
+        });
+      } catch (err) {
+        set({ saveStatus: "error", saveError: "Failed to load project" });
+        return;
+      }
+    }
+
+    set({ activeProjectId: id, selectedNodeId: null, editingNodeId: null });
+  },
 
   setSelectedNode: (id) => set({ selectedNodeId: id }),
 
@@ -148,6 +169,8 @@ export const useStore = create<MindStore>((set, get) => ({
 
   setSaveStatus: (status, error = null) =>
     set({ saveStatus: status, saveError: error }),
+
+  clearSaveError: () => set({ saveStatus: "saved", saveError: null }),
 
   onNodesChange: (changes) => {
     const project = get().activeProject();

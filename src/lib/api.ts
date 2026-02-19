@@ -1,4 +1,15 @@
-import type { ProjectData } from "@/types";
+import type { ProjectData, ProjectSummary } from "@/types";
+
+export async function fetchProjectSummaries(): Promise<ProjectSummary[]> {
+  const res = await fetch("/api/projects?summary=true");
+  return res.json();
+}
+
+export async function fetchProject(id: string): Promise<ProjectData> {
+  const res = await fetch(`/api/projects/${encodeURIComponent(id)}`);
+  if (!res.ok) throw new Error("Failed to fetch project");
+  return res.json();
+}
 
 export async function fetchProjects(): Promise<ProjectData[]> {
   const res = await fetch("/api/projects");

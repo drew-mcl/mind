@@ -31,6 +31,11 @@ export type ProjectData = {
   edges: MindEdge[];
 };
 
+export type ProjectSummary = {
+  id: string;
+  name: string;
+};
+
 export type MindStore = {
   projects: ProjectData[];
   activeProjectId: string | null;
@@ -66,4 +71,5 @@ export type MindStore = {
   setConnectMode: (mode: "off" | "blocking") => void;
   setConnectSource: (id: string | null) => void;
   setSaveStatus: (status: SaveStatus, error?: string | null) => void;
+  clearSaveError: () => void;
 };

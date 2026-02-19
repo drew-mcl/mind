@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { useStore } from "@/store";
-import type { MindNode } from "@/types";
+import type { MindNode, MindEdge } from "@/types";
 
 const NODE_DIMS: Record<string, { w: number; h: number }> = {
   root: { w: 160, h: 56 },
@@ -28,6 +28,57 @@ function overlaps(a: MindNode, b: MindNode, pad = 8) {
     && ar.y - pad < br.y + br.h + pad
     && ar.y + ar.h + pad > br.y - pad
   );
+}
+
+function makeNode(
+  id: string,
+  type: "root" | "domain" | "feature" | "task",
+  x: number,
+  y: number,
+  label = id,
+  measured?: { width: number; height: number },
+): MindNode {
+  return {
+    id,
+    type,
+    position: { x, y },
+    data: {
+      label,
+      type,
+      ...(type === "feature" || type === "task" ? { status: "pending" as const } : {}),
+    },
+    ...(measured ? { measured } : {}),
+  };
+}
+
+function makeEdge(source: string, target: string): MindEdge {
+  return {
+    id: `e-${source}-${target}`,
+    source,
+    target,
+    data: { edgeType: "hierarchy" },
+  };
+}
+
+function depthMap(rootId: string, edges: MindEdge[]) {
+  const depths = new Map<string, number>([[rootId, 0]]);
+  const childrenById = new Map<string, string[]>();
+  for (const edge of edges) {
+    if (edge.data?.edgeType !== "hierarchy") continue;
+    if (!childrenById.has(edge.source)) childrenById.set(edge.source, []);
+    childrenById.get(edge.source)!.push(edge.target);
+  }
+  const queue = [rootId];
+  while (queue.length > 0) {
+    const id = queue.shift()!;
+    const depth = depths.get(id) ?? 0;
+    for (const childId of childrenById.get(id) ?? []) {
+      if (depths.has(childId)) continue;
+      depths.set(childId, depth + 1);
+      queue.push(childId);
+    }
+  }
+  return depths;
 }
 
 describe("useStore", () => {
@@ -191,6 +242,124 @@ describe("useStore", () => {
       );
 
       expect(featureDist).toBeGreaterThan(domainDist);
+    });
+
+    it("finds a non-overlapping spawn in crowded local neighborhoods", () => {
+      const root = makeNode("root", "root", -80, -28, "Test");
+      const domain = makeNode("domain", "domain", 120, -25, "domain");
+      const parentCenter = { x: domain.position.x + 85, y: domain.position.y + 25 };
+      const existingChildren: MindNode[] = [];
+      const edges: MindEdge[] = [makeEdge(root.id, domain.id)];
+
+      // Fill most close angles around the domain to force the placer
+      // to search wider angles/distances.
+      const obstacleAngles = [
+        -2.3, -1.95, -1.58, -1.18, -0.8, -0.38, 0.03, 0.48, 0.93, 1.37, 1.78, 2.15,
+      ];
+      obstacleAngles.forEach((angle, i) => {
+        const dist = 168 + (i % 3) * 24;
+        const c = {
+          x: parentCenter.x + Math.cos(angle) * dist,
+          y: parentCenter.y + Math.sin(angle) * dist,
+        };
+        const feature = makeNode(
+          `f-${i}`,
+          "feature",
+          c.x - 90,
+          c.y - 35,
+          `feature-${i}`,
+          { width: 180, height: 70 },
+        );
+        existingChildren.push(feature);
+        edges.push(makeEdge(domain.id, feature.id));
+      });
+
+      useStore.setState({
+        projects: [
+          {
+            id: "test",
+            name: "Test",
+            nodes: [root, domain, ...existingChildren],
+            edges,
+          },
+        ],
+        activeProjectId: "test",
+        selectedNodeId: null,
+        editingNodeId: null,
+      });
+
+      useStore.getState().addChildNode(domain.id);
+      const updated = useStore.getState().activeProject()!;
+      const newNodeId = useStore.getState().selectedNodeId;
+      expect(newNodeId).toBeTruthy();
+      const newNode = updated.nodes.find((n) => n.id === newNodeId)!;
+
+      for (const existing of updated.nodes) {
+        if (existing.id === newNode.id) continue;
+        expect(overlaps(newNode, existing, 6)).toBe(false);
+      }
+    });
+  });
+
+  describe("applyLayout integration", () => {
+    it("keeps deep long cards from crossing the root/domain core cluster", () => {
+      const root = makeNode("root", "root", -80, -28, "mind", {
+        width: 160,
+        height: 56,
+      });
+      const d1 = makeNode("d1", "domain", -30, -190, "d1", { width: 170, height: 50 });
+      const d2 = makeNode("d2", "domain", 130, -120, "d2", { width: 170, height: 50 });
+      const d3 = makeNode("d3", "domain", 165, 30, "d3", { width: 170, height: 50 });
+      const d4 = makeNode("d4", "domain", -10, 125, "d4", { width: 170, height: 50 });
+      const d5 = makeNode("d5", "domain", -180, 45, "d5", { width: 170, height: 50 });
+
+      const longLabel =
+        "this is a very long task card that used to cut through the central ring after rearrange";
+      const fLong = makeNode("f-long", "feature", -40, -70, longLabel, {
+        width: 620,
+        height: 70,
+      });
+      const tLong = makeNode("t-long", "task", 20, -24, longLabel, {
+        width: 610,
+        height: 70,
+      });
+
+      const f2 = makeNode("f2", "feature", 260, -150, "f2", { width: 200, height: 70 });
+      const f3 = makeNode("f3", "feature", 250, 68, "f3", { width: 200, height: 70 });
+      const f4 = makeNode("f4", "feature", -70, 205, "f4", { width: 200, height: 70 });
+
+      const nodes = [root, d1, d2, d3, d4, d5, fLong, tLong, f2, f3, f4];
+      const edges: MindEdge[] = [
+        makeEdge(root.id, d1.id),
+        makeEdge(root.id, d2.id),
+        makeEdge(root.id, d3.id),
+        makeEdge(root.id, d4.id),
+        makeEdge(root.id, d5.id),
+        makeEdge(d1.id, fLong.id),
+        makeEdge(fLong.id, tLong.id),
+        makeEdge(d2.id, f2.id),
+        makeEdge(d3.id, f3.id),
+        makeEdge(d4.id, f4.id),
+      ];
+
+      useStore.setState({
+        projects: [{ id: "test", name: "Test", nodes, edges }],
+        activeProjectId: "test",
+        selectedNodeId: null,
+        editingNodeId: null,
+      });
+
+      useStore.getState().applyLayout();
+      const project = useStore.getState().activeProject()!;
+      const depths = depthMap(root.id, project.edges);
+      const core = project.nodes.filter((n) => (depths.get(n.id) ?? 0) <= 1);
+      const deep = project.nodes.filter((n) => (depths.get(n.id) ?? 2) >= 2);
+
+      for (const dn of deep) {
+        for (const cn of core) {
+          expect(overlaps(dn, cn, 6)).toBe(false);
+        }
+      }
     });
   });
 

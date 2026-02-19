@@ -34,7 +34,8 @@ const SOFT_WIDTH_FALLOFF = 0.52;
 const MAX_LAYOUT_WIDTH = 340;
 const COLLISION_PAD_X = 14;
 const COLLISION_PAD_Y = 18;
-const COLLISION_ITERS = 72;
+const COLLISION_ITERS = 48; // Reduced from 72
+const COLLISION_STOP_THRESHOLD = 0.2; // Stop early if movement is minimal
 const SPRING_BACK = 0.045;
 const MAX_RADIAL_DRIFT = 120;
 const MIN_RADIAL_DRIFT = 52;
@@ -522,11 +523,11 @@ export function applyRadialLayout(
       clampToAnchorShell(id);
     }
 
-    if (moved < 0.5) break;
+    if (moved < COLLISION_STOP_THRESHOLD) break;
   }
 
   // Final pass: resolve any residual collisions with looser radial bounds.
-  for (let iter = 0; iter < 24; iter++) {
+  for (let iter = 0; iter < 16; iter++) { // Reduced from 24
     let moved = 0;
     for (let i = 0; i < ids.length; i++) {
       for (let j = i + 1; j < ids.length; j++) {
@@ -563,7 +564,7 @@ export function applyRadialLayout(
     }
 
     for (const id of ids) clampToAnchorShell(id, 28);
-    if (moved < 0.5) break;
+    if (moved < COLLISION_STOP_THRESHOLD) break;
   }
 
   const rootCenter = centers.get(rootId);

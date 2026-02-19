@@ -15,6 +15,7 @@ export function Sidebar() {
   const setConnectMode = useStore((s) => s.setConnectMode);
   const saveStatus = useStore((s) => s.saveStatus);
   const saveError = useStore((s) => s.saveError);
+  const clearSaveError = useStore((s) => s.clearSaveError);
 
   const [isCreating, setIsCreating] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -50,18 +51,19 @@ export function Sidebar() {
       <div className="px-5 py-3.5 border-b border-border-subtle">
         <div className="flex items-center justify-between gap-2">
           <h1 className="text-sm font-bold tracking-tight text-text-primary">mind</h1>
-          <span
+          <button
+            onClick={() => saveStatus === "error" && clearSaveError()}
             className={cn(
-              "rounded-full px-2 py-0.5 text-[10px] font-medium",
+              "rounded-full px-2 py-0.5 text-[10px] font-medium transition-all",
               saveStatus === "saving" && "bg-accent-subtle text-accent",
               saveStatus === "dirty" && "bg-amber-50 text-amber-700",
-              saveStatus === "error" && "bg-red-50 text-red-600",
+              saveStatus === "error" && "bg-red-50 text-red-600 hover:bg-red-100 cursor-pointer",
               saveStatus === "saved" && "bg-emerald-50 text-emerald-700",
             )}
-            title={saveStatusText}
+            title={saveStatus === "error" ? "Click to clear error" : saveStatusText}
           >
             {saveStatusText}
-          </span>
+          </button>
         </div>
       </div>
 
