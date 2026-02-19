@@ -45,6 +45,7 @@ var uiCmd = &cobra.Command{
 func main() {
 	rootCmd.AddCommand(treeCmd)
 	rootCmd.AddCommand(uiCmd)
+	rootCmd.AddCommand(vaultCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)

@@ -79,30 +79,19 @@ func LoadAllProjects(dataDir string) ([]*Project, error) {
 	return projects, nil
 }
 
-// FindDataDir walks up from cwd looking for a data/ directory with JSON files.
-func FindDataDir() (string, error) {
-	dir, err := os.Getwd()
+// VaultDir returns the path to ~/.mind/, creating it if needed.
+func VaultDir() (string, error) {
+	home, err := os.UserHomeDir()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("cannot determine home directory: %w", err)
 	}
 
-	for {
-		candidate := filepath.Join(dir, "data")
-		if info, err := os.Stat(candidate); err == nil && info.IsDir() {
-			matches, _ := filepath.Glob(filepath.Join(candidate, "*.json"))
-			if len(matches) > 0 {
-				return candidate, nil
-			}
-		}
-
-		parent := filepath.Dir(dir)
-		if parent == dir {
-			break
-		}
-		dir = parent
+	vault := filepath.Join(home, ".mind")
+	if err := os.MkdirAll(vault, 0o755); err != nil {
+		return "", fmt.Errorf("creating vault %s: %w", vault, err)
 	}
 
-	return "", fmt.Errorf("no data/ directory with JSON files found")
+	return vault, nil
 }
 
 // FindProject finds a project by ID (case-insensitive).

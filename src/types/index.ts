@@ -3,6 +3,8 @@ import type { Node, Edge, OnNodesChange, OnEdgesChange } from "@xyflow/react";
 export type NodeType = "root" | "domain" | "feature" | "task";
 export type TaskStatus = "pending" | "in_progress" | "blocked" | "done";
 export type EdgeType = "hierarchy" | "blocks";
+export type SaveStatus = "saved" | "dirty" | "saving" | "error";
+export type AddButtonSide = "top" | "right" | "bottom" | "left";
 
 export type MindNodeData = {
   label: string;
@@ -10,6 +12,8 @@ export type MindNodeData = {
   description?: string;
   assignee?: string;
   status?: TaskStatus;
+  // UI-only hint injected at render time; not persisted.
+  uiAddSide?: AddButtonSide;
 };
 
 export type MindNode = Node<MindNodeData, string>;
@@ -32,6 +36,9 @@ export type MindStore = {
   activeProjectId: string | null;
   selectedNodeId: string | null;
   editingNodeId: string | null;
+  layoutVersion: number;
+  saveStatus: SaveStatus;
+  saveError: string | null;
 
   // Derived
   activeProject: () => ProjectData | undefined;
@@ -58,4 +65,5 @@ export type MindStore = {
   connectSourceId: string | null;
   setConnectMode: (mode: "off" | "blocking") => void;
   setConnectSource: (id: string | null) => void;
+  setSaveStatus: (status: SaveStatus, error?: string | null) => void;
 };

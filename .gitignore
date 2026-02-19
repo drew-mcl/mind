@@ -1,10 +1,14 @@
 node_modules
 dist
 tsconfig.tsbuildinfo
-*.png
+# Screenshots (dev artifacts, not docs)
+/*.png
 
 # Go build output
 /mind
+
+# Data lives in ~/.mind/ vault
+data/
 
 # IDE / tooling
 .claude/

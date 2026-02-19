@@ -5,6 +5,7 @@ import type { MindNode } from "@/types";
 import { cn } from "@/lib/cn";
 import { domainColor } from "@/lib/colors";
 import { useStore, useActiveProject } from "@/store";
+import { addButtonSideClass } from "./addButtonSide";
 
 export function DomainNode({ id, data, selected }: NodeProps<MindNode>) {
   const addChildNode = useStore((s) => s.addChildNode);
@@ -20,6 +21,7 @@ export function DomainNode({ id, data, selected }: NodeProps<MindNode>) {
     return Math.max(0, domainIds.indexOf(id));
   }, [project, id]);
   const color = domainColor(colorIndex);
+  const addSide = data.uiAddSide ?? "bottom";
   const inputRef = useRef<HTMLInputElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const [editMinWidth, setEditMinWidth] = useState<number | undefined>();
@@ -41,7 +43,7 @@ export function DomainNode({ id, data, selected }: NodeProps<MindNode>) {
   }, [id, updateNodeData, setEditingNode]);
 
   return (
-    <div className="mind-node relative">
+    <div className={cn("mind-node relative", selected && "node-selected")}>
       <div
         className={cn(
           "rounded-xl px-6 py-3.5 text-center min-w-[130px]",
@@ -89,7 +91,10 @@ export function DomainNode({ id, data, selected }: NodeProps<MindNode>) {
           e.stopPropagation();
           addChildNode(id);
         }}
-        className="node-add-btn absolute -bottom-4 left-1/2 flex items-center justify-center w-6 h-6 rounded-full text-[15px] font-medium leading-none text-white shadow-sm transition-colors"
+        className={cn(
+          "node-add-btn absolute flex h-7 w-7 items-center justify-center rounded-full text-[16px] font-semibold leading-none text-white shadow-sm ring-2 ring-white transition-colors",
+          addButtonSideClass[addSide],
+        )}
         style={{ backgroundColor: color.border }}
       >
         +

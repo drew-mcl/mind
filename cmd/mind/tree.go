@@ -19,7 +19,7 @@ func truncate(s string, max int) string {
 
 // runTree loads projects and prints trees.
 func runTree(projectID string) error {
-	dataDir, err := data.FindDataDir()
+	dataDir, err := data.VaultDir()
 	if err != nil {
 		return err
 	}

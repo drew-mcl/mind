@@ -7,6 +7,79 @@ import { applyRadialLayout } from "@/lib/layout";
 
 let nodeCounter = 0;
 
+const NODE_SIZE_FALLBACK: Record<string, { w: number; h: number }> = {
+  root: { w: 160, h: 56 },
+  domain: { w: 170, h: 50 },
+  feature: { w: 180, h: 70 },
+  task: { w: 180, h: 70 },
+};
+
+function nodeCenter(node: MindNode) {
+  const fallback = NODE_SIZE_FALLBACK[node.data.type] ?? NODE_SIZE_FALLBACK.task;
+  const width = node.measured?.width ?? fallback.w;
+  const height = node.measured?.height ?? fallback.h;
+  return {
+    x: node.position.x + width / 2,
+    y: node.position.y + height / 2,
+  };
+}
+
+function nodeDims(node: MindNode) {
+  const fallback = NODE_SIZE_FALLBACK[node.data.type] ?? NODE_SIZE_FALLBACK.task;
+  return {
+    w: node.measured?.width ?? fallback.w,
+    h: node.measured?.height ?? fallback.h,
+  };
+}
+
+function rectClearance(
+  a: { x: number; y: number; w: number; h: number },
+  b: { x: number; y: number; w: number; h: number },
+) {
+  const dx = Math.max(b.x - (a.x + a.w), a.x - (b.x + b.w), 0);
+  const dy = Math.max(b.y - (a.y + a.h), a.y - (b.y + b.h), 0);
+  if (dx === 0 && dy === 0) {
+    const overlapX = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
+    const overlapY = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
+    return -Math.min(overlapX, overlapY);
+  }
+  return Math.hypot(dx, dy);
+}
+
+function normalizeAngle(angle: number) {
+  const full = Math.PI * 2;
+  let next = angle % full;
+  if (next < 0) next += full;
+  return next;
+}
+
+function angleDistance(a: number, b: number) {
+  let diff = Math.abs(normalizeAngle(a) - normalizeAngle(b));
+  if (diff > Math.PI) diff = Math.PI * 2 - diff;
+  return diff;
+}
+
+function largestGapMidAngle(angles: number[]) {
+  if (angles.length === 0) return null;
+  if (angles.length === 1) return normalizeAngle(angles[0] + Math.PI);
+
+  const sorted = [...angles].map(normalizeAngle).sort((x, y) => x - y);
+  let bestGap = -1;
+  let bestMid = sorted[0];
+
+  for (let i = 0; i < sorted.length; i++) {
+    const current = sorted[i];
+    const next = i === sorted.length - 1 ? sorted[0] + Math.PI * 2 : sorted[i + 1];
+    const gap = next - current;
+    if (gap > bestGap) {
+      bestGap = gap;
+      bestMid = current + gap / 2;
+    }
+  }
+
+  return normalizeAngle(bestMid);
+}
+
 // Stable hooks for derived data — avoids infinite re-renders with React 19
 export function useActiveProject() {
   const projects = useStore(useShallow((s) => s.projects));
@@ -38,6 +111,9 @@ export const useStore = create<MindStore>((set, get) => ({
   activeProjectId: null,
   selectedNodeId: null,
   editingNodeId: null,
+  layoutVersion: 0,
+  saveStatus: "saved",
+  saveError: null,
   connectMode: "off",
   connectSourceId: null,
 
@@ -69,6 +145,9 @@ export const useStore = create<MindStore>((set, get) => ({
   setConnectMode: (mode) => set({ connectMode: mode, connectSourceId: null }),
 
   setConnectSource: (id) => set({ connectSourceId: id }),
+
+  setSaveStatus: (status, error = null) =>
+    set({ saveStatus: status, saveError: error }),
 
   onNodesChange: (changes) => {
     const project = get().activeProject();
@@ -132,21 +211,181 @@ export const useStore = create<MindStore>((set, get) => ({
     const childType = childTypeMap[parent.data.type] ?? "task";
     const newId = `node-${Date.now()}-${++nodeCounter}`;
 
-    // Count existing children to offset position
-    const siblingCount = project.edges.filter(
-      (e) => e.source === parentId && e.data?.edgeType === "hierarchy",
-    ).length;
+    const hierarchyEdges = project.edges.filter(
+      (e) => e.data?.edgeType === "hierarchy",
+    );
+    const nodeById = new Map(project.nodes.map((node) => [node.id, node]));
+    const children = hierarchyEdges
+      .filter((edge) => edge.source === parentId)
+      .map((edge) => nodeById.get(edge.target))
+      .filter((node): node is MindNode => Boolean(node));
 
-    // Place near parent with slight offset based on sibling count
-    const angle = (siblingCount * Math.PI) / 4 - Math.PI / 2;
-    const dist = 150;
+    const parentCenter = nodeCenter(parent);
+    const root = project.nodes.find((node) => node.data.type === "root") ?? parent;
+    const rootCenter = nodeCenter(root);
+
+    let preferredAngle: number;
+    if (parent.id === root.id) {
+      const childAngles = children.map((child) => {
+        const c = nodeCenter(child);
+        return Math.atan2(c.y - parentCenter.y, c.x - parentCenter.x);
+      });
+      preferredAngle = largestGapMidAngle(childAngles) ?? -Math.PI / 2;
+    } else {
+      const outwardX = parentCenter.x - rootCenter.x;
+      const outwardY = parentCenter.y - rootCenter.y;
+      if (Math.hypot(outwardX, outwardY) > 1) {
+        preferredAngle = Math.atan2(outwardY, outwardX);
+      } else {
+        const incomingEdge = hierarchyEdges.find((edge) => edge.target === parentId);
+        const incoming = incomingEdge ? nodeById.get(incomingEdge.source) : undefined;
+        if (incoming) {
+          const incomingCenter = nodeCenter(incoming);
+          preferredAngle = Math.atan2(
+            parentCenter.y - incomingCenter.y,
+            parentCenter.x - incomingCenter.x,
+          );
+        } else {
+          preferredAngle = -Math.PI / 2;
+        }
+      }
+    }
+
+    const childAngles = children.map((child) => {
+      const c = nodeCenter(child);
+      return Math.atan2(c.y - parentCenter.y, c.x - parentCenter.x);
+    });
+    const candidateOffsets = [
+      0,
+      0.3,
+      -0.3,
+      0.56,
+      -0.56,
+      0.84,
+      -0.84,
+      1.12,
+      -1.12,
+      1.42,
+      -1.42,
+      1.74,
+      -1.74,
+    ];
+
+    const baseDistByParentType: Record<string, number> = {
+      root: 208,
+      domain: 172,
+      feature: 148,
+      task: 142,
+    };
+    const baseDist = baseDistByParentType[parent.data.type] ?? 150;
+    const childDims = NODE_SIZE_FALLBACK[childType] ?? NODE_SIZE_FALLBACK.task;
+
+    type PlacementCandidate = {
+      x: number;
+      y: number;
+      overlapCount: number;
+      minClearance: number;
+      dist: number;
+      siblingAnglePenalty: number;
+    };
+
+    const candidateDistances = [1, 1.16, 1.34, 1.54, 1.78, 2.04, 2.32].map(
+      (scale) => (baseDist + Math.min(40, children.length * 7)) * scale,
+    );
+    const placementPad = 14;
+    const existingRects = project.nodes.map((node) => {
+      const dims = nodeDims(node);
+      return {
+        id: node.id,
+        x: node.position.x,
+        y: node.position.y,
+        w: dims.w,
+        h: dims.h,
+      };
+    });
+
+    const evaluateCandidate = (angle: number, dist: number): PlacementCandidate => {
+      const center = {
+        x: parentCenter.x + Math.cos(angle) * dist,
+        y: parentCenter.y + Math.sin(angle) * dist,
+      };
+      const rect = {
+        x: center.x - childDims.w / 2,
+        y: center.y - childDims.h / 2,
+        w: childDims.w,
+        h: childDims.h,
+      };
+
+      let overlapCount = 0;
+      let minClearance = Number.POSITIVE_INFINITY;
+      for (const existing of existingRects) {
+        const clearance = rectClearance(rect, existing);
+        minClearance = Math.min(minClearance, clearance);
+        if (clearance < placementPad) overlapCount++;
+      }
+
+      const nearestSiblingAngle = childAngles.reduce(
+        (best, existing) => Math.min(best, angleDistance(existing, angle)),
+        Math.PI,
+      );
+
+      return {
+        x: rect.x,
+        y: rect.y,
+        overlapCount,
+        minClearance,
+        dist,
+        siblingAnglePenalty: Math.max(0, 0.34 - nearestSiblingAngle),
+      };
+    };
+
+    let bestPlacement: PlacementCandidate | null = null;
+    for (const dist of candidateDistances) {
+      for (const offset of candidateOffsets) {
+        const angle = preferredAngle + offset;
+        const candidate = evaluateCandidate(angle, dist);
+        const candidateScore =
+          candidate.overlapCount * 10000
+          + candidate.siblingAnglePenalty * 620
+          + candidate.dist * 0.18
+          - Math.min(candidate.minClearance, 220) * 2.1;
+        const bestScore = !bestPlacement
+          ? Number.POSITIVE_INFINITY
+          : bestPlacement.overlapCount * 10000
+            + bestPlacement.siblingAnglePenalty * 620
+            + bestPlacement.dist * 0.18
+            - Math.min(bestPlacement.minClearance, 220) * 2.1;
+
+        if (candidateScore < bestScore) {
+          bestPlacement = candidate;
+        }
+      }
+
+      if (
+        bestPlacement
+        && bestPlacement.overlapCount === 0
+        && bestPlacement.minClearance >= placementPad
+      ) {
+        break;
+      }
+    }
+
+    const childCenter = bestPlacement
+      ? {
+          x: bestPlacement.x + childDims.w / 2,
+          y: bestPlacement.y + childDims.h / 2,
+        }
+      : {
+          x: parentCenter.x + Math.cos(preferredAngle) * baseDist,
+          y: parentCenter.y + Math.sin(preferredAngle) * baseDist,
+        };
 
     const newNode: MindNode = {
       id: newId,
       type: childType,
       position: {
-        x: parent.position.x + Math.cos(angle) * dist,
-        y: parent.position.y + Math.sin(angle) * dist,
+        x: childCenter.x - childDims.w / 2,
+        y: childCenter.y - childDims.h / 2,
       },
       data: {
         label: "",
@@ -276,6 +515,7 @@ export const useStore = create<MindStore>((set, get) => ({
 
     const { nodes, edges } = applyRadialLayout(project.nodes, project.edges);
     set({
+      layoutVersion: get().layoutVersion + 1,
       projects: get().projects.map((p) =>
         p.id === project.id ? { ...p, nodes, edges } : p,
       ),

@@ -91,15 +91,16 @@ body {
 /* ── Node hover button ── */
 .node-add-btn {
   opacity: 0;
-  transform: translateX(-50%) translateY(4px) scale(0.92);
+  transform: scale(0.92);
   pointer-events: none;
-  transition: opacity 180ms ease, transform 180ms ease;
+  transition: opacity 160ms ease, transform 160ms ease;
 }
 
-.mind-node:hover .node-add-btn {
+.mind-node:hover .node-add-btn,
+.mind-node.node-selected .node-add-btn {
   opacity: 1;
   pointer-events: auto;
-  transform: translateX(-50%) translateY(0) scale(1);
+  transform: scale(1);
 }
 
 /* ── Node shared transitions ── */

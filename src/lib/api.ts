@@ -6,9 +6,12 @@ export async function fetchProjects(): Promise<ProjectData[]> {
 }
 
 export async function saveProject(project: ProjectData): Promise<void> {
-  await fetch(`/api/projects/${encodeURIComponent(project.id)}`, {
+  const res = await fetch(`/api/projects/${encodeURIComponent(project.id)}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(project, null, 2),
   });
+  if (!res.ok) {
+    throw new Error(`Failed to save project (${res.status})`);
+  }
 }

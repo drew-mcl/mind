@@ -12,7 +12,7 @@ export function StatusDot({ status }: { status: TaskStatus }) {
   return (
     <span
       className={cn(
-        "inline-block h-[6px] w-[6px] rounded-full ring-2 ring-white",
+        "inline-block h-[7px] w-[7px] rounded-full ring-2 ring-white",
         dotColors[status],
       )}
     />

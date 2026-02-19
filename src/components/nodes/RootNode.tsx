@@ -3,12 +3,14 @@ import type { NodeProps } from "@xyflow/react";
 import type { MindNode } from "@/types";
 import { cn } from "@/lib/cn";
 import { useStore } from "@/store";
+import { addButtonSideClass } from "./addButtonSide";
 
 export function RootNode({ id, data, selected }: NodeProps<MindNode>) {
   const addChildNode = useStore((s) => s.addChildNode);
+  const addSide = data.uiAddSide ?? "bottom";
 
   return (
-    <div className="mind-node relative">
+    <div className={cn("mind-node relative", selected && "node-selected")}>
       <div
         className={cn(
           "rounded-2xl px-10 py-5 text-center",
@@ -32,7 +34,10 @@ export function RootNode({ id, data, selected }: NodeProps<MindNode>) {
           e.stopPropagation();
           addChildNode(id);
         }}
-        className="node-add-btn absolute -bottom-4 left-1/2 flex items-center justify-center w-6 h-6 rounded-full bg-accent text-[15px] font-medium leading-none text-white shadow-sm hover:bg-accent-hover transition-colors"
+        className={cn(
+          "node-add-btn absolute flex h-7 w-7 items-center justify-center rounded-full bg-accent text-[16px] font-semibold leading-none text-white shadow-sm ring-2 ring-white hover:bg-accent-hover transition-colors",
+          addButtonSideClass[addSide],
+        )}
       >
         +
       </button>

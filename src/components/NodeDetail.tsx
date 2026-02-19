@@ -1,5 +1,10 @@
-import { useStore, useSelectedNode, useActiveEdges } from "@/store";
-import type { TaskStatus, MindEdge } from "@/types";
+import {
+  useStore,
+  useSelectedNode,
+  useActiveEdges,
+  useActiveProject,
+} from "@/store";
+import type { TaskStatus, MindEdge, NodeType } from "@/types";
 
 const statuses: { value: TaskStatus; label: string; color: string }[] = [
   { value: "pending", label: "Pending", color: "bg-status-pending" },
@@ -7,6 +12,13 @@ const statuses: { value: TaskStatus; label: string; color: string }[] = [
   { value: "blocked", label: "Blocked", color: "bg-status-blocked" },
   { value: "done", label: "Done", color: "bg-status-done" },
 ];
+
+const nextChildType: Record<NodeType, string> = {
+  root: "domain",
+  domain: "feature",
+  feature: "task",
+  task: "task",
+};
 
 function countDescendants(nodeId: string, edges: MindEdge[]): number {
   let count = 0;
@@ -23,15 +35,42 @@ function countDescendants(nodeId: string, edges: MindEdge[]): number {
 }
 
 export function NodeDetail() {
+  const project = useActiveProject();
   const node = useSelectedNode();
   const updateNodeData = useStore((s) => s.updateNodeData);
+  const addChildNode = useStore((s) => s.addChildNode);
   const deleteNode = useStore((s) => s.deleteNode);
   const edges = useActiveEdges();
 
-  if (!node) return null;
+  if (!node) {
+    if (!project) return null;
+
+    const root = project.nodes.find((n) => n.data.type === "root");
+    const canCreateFirstDomain = Boolean(root && project.nodes.length <= 1);
+
+    return (
+      <div className="border-t border-border px-4 py-4 space-y-2">
+        <h3 className="text-[11px] font-semibold uppercase tracking-wider text-text-muted">
+          Node details
+        </h3>
+        <p className="text-[12px] leading-relaxed text-text-secondary">
+          Click a node to edit details, status, and assignee.
+        </p>
+        {canCreateFirstDomain && root && (
+          <button
+            onClick={() => addChildNode(root.id)}
+            className="w-full rounded-lg bg-accent px-3 py-1.5 text-[11px] font-semibold text-white transition-colors hover:bg-accent-hover"
+          >
+            Add first domain
+          </button>
+        )}
+      </div>
+    );
+  }
 
   const { data } = node;
   const childCount = countDescendants(node.id, edges);
+  const childLabel = nextChildType[data.type];
 
   const handleDelete = () => {
     if (childCount > 0) {
@@ -114,8 +153,15 @@ export function NodeDetail() {
         </>
       )}
 
-      {data.type !== "root" && (
-        <div className="pt-2">
+      <div className="flex items-center gap-2 pt-2">
+        <button
+          onClick={() => addChildNode(node.id)}
+          className="rounded-md border border-accent/30 bg-accent-subtle px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:border-accent/50 hover:bg-accent-subtle/80"
+        >
+          Add {childLabel}
+        </button>
+
+        {data.type !== "root" && (
           <button
             onClick={handleDelete}
             className="rounded-md border border-red-200 px-3 py-1.5 text-xs text-red-500 transition-colors hover:border-red-300 hover:bg-red-50 hover:text-red-600"
@@ -124,8 +170,8 @@ export function NodeDetail() {
               ? `Delete (and ${childCount} ${childCount === 1 ? "child" : "children"})`
               : "Delete"}
           </button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

@@ -1,8 +1,9 @@
 import type { Plugin } from "vite";
 import fs from "node:fs";
 import path from "node:path";
+import os from "node:os";
 
-const DATA_DIR = path.resolve(process.cwd(), "data");
+const DATA_DIR = path.join(os.homedir(), ".mind");
 
 function ensureDataDir() {
   if (!fs.existsSync(DATA_DIR)) {

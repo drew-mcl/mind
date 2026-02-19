@@ -5,6 +5,7 @@ import type { MindNode, TaskStatus } from "@/types";
 import { cn } from "@/lib/cn";
 import { StatusDot } from "./StatusDot";
 import { useStore } from "@/store";
+import { addButtonSideClass } from "./addButtonSide";
 
 const accentBorder: Record<TaskStatus, string> = {
   pending: "border-l-status-pending",
@@ -22,26 +23,38 @@ const statusLabel: Record<TaskStatus, string> = {
 
 const statusPillStyle: Record<TaskStatus, React.CSSProperties> = {
   pending: {
-    backgroundColor: "color-mix(in srgb, var(--color-status-pending) 12%, transparent)",
+    backgroundColor: "color-mix(in srgb, var(--color-status-pending) 18%, transparent)",
     color: "var(--color-status-pending)",
   },
   in_progress: {
-    backgroundColor: "color-mix(in srgb, var(--color-status-progress) 12%, transparent)",
+    backgroundColor: "color-mix(in srgb, var(--color-status-progress) 20%, transparent)",
     color: "var(--color-status-progress)",
   },
   blocked: {
-    backgroundColor: "color-mix(in srgb, var(--color-status-blocked) 12%, transparent)",
+    backgroundColor: "color-mix(in srgb, var(--color-status-blocked) 20%, transparent)",
     color: "var(--color-status-blocked)",
   },
   done: {
-    backgroundColor: "color-mix(in srgb, var(--color-status-done) 12%, transparent)",
+    backgroundColor: "color-mix(in srgb, var(--color-status-done) 18%, transparent)",
     color: "var(--color-status-done)",
-    opacity: 0.7,
+    opacity: 0.85,
   },
+};
+
+const statusCardStyle: Record<TaskStatus, React.CSSProperties> = {
+  pending: {},
+  in_progress: {
+    borderColor: "color-mix(in srgb, var(--color-status-progress) 28%, var(--color-border))",
+  },
+  blocked: {
+    borderColor: "color-mix(in srgb, var(--color-status-blocked) 36%, var(--color-border))",
+  },
+  done: {},
 };
 
 export function TaskNode({ id, data, selected }: NodeProps<MindNode>) {
   const status = data.status ?? "pending";
+  const addSide = data.uiAddSide ?? "bottom";
   const addChildNode = useStore((s) => s.addChildNode);
   const editingNodeId = useStore((s) => s.editingNodeId);
   const setEditingNode = useStore((s) => s.setEditingNode);
@@ -67,12 +80,12 @@ export function TaskNode({ id, data, selected }: NodeProps<MindNode>) {
   }, [id, updateNodeData, setEditingNode]);
 
   return (
-    <div className="mind-node relative">
+    <div className={cn("mind-node relative", selected && "node-selected")}>
       <div
         className={cn(
           "rounded-lg bg-surface px-4 py-3 min-w-[120px]",
           "shadow-[0_1px_3px_rgba(0,0,0,0.03),0_3px_10px_rgba(0,0,0,0.02)]",
-          "border border-border border-l-[3px]",
+          "border border-border border-l-[4px]",
           accentBorder[status],
           selected && "shadow-[0_0_0_2px_var(--color-accent),0_4px_16px_rgba(99,102,241,0.1)]",
         )}
@@ -80,7 +93,10 @@ export function TaskNode({ id, data, selected }: NodeProps<MindNode>) {
           if (cardRef.current) setEditMinWidth(cardRef.current.offsetWidth);
           setEditingNode(id);
         }}
-        style={isEditing ? { minWidth: editMinWidth } : undefined}
+        style={{
+          ...statusCardStyle[status],
+          ...(isEditing && editMinWidth ? { minWidth: editMinWidth } : {}),
+        }}
         ref={cardRef}
       >
         <div className="flex items-center gap-2">
@@ -105,7 +121,7 @@ export function TaskNode({ id, data, selected }: NodeProps<MindNode>) {
         {!isEditing && (
           <div className="mt-1.5 flex items-center gap-2 pl-[15px]">
             <span
-              className="inline-block rounded-full px-2 py-[1px] text-[10px] font-medium leading-[16px]"
+              className="inline-block rounded-full px-2 py-[1px] text-[10px] font-semibold leading-[16px]"
               style={statusPillStyle[status]}
             >
               {statusLabel[status]}
@@ -122,7 +138,10 @@ export function TaskNode({ id, data, selected }: NodeProps<MindNode>) {
           e.stopPropagation();
           addChildNode(id);
         }}
-        className="node-add-btn absolute -bottom-4 left-1/2 flex items-center justify-center w-6 h-6 rounded-full bg-text-secondary text-[15px] font-medium leading-none text-white shadow-sm hover:bg-text-primary transition-colors"
+        className={cn(
+          "node-add-btn absolute flex h-7 w-7 items-center justify-center rounded-full bg-text-secondary text-[16px] font-semibold leading-none text-white shadow-sm ring-2 ring-white hover:bg-text-primary transition-colors",
+          addButtonSideClass[addSide],
+        )}
       >
         +
       </button>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
   ReactFlow,
   Background,
@@ -8,8 +8,9 @@ import {
   MarkerType,
   type NodeMouseHandler,
   type EdgeTypes,
+  type ReactFlowInstance,
 } from "@xyflow/react";
-import type { MindEdge } from "@/types";
+import type { AddButtonSide, MindEdge, MindNode } from "@/types";
 import "@xyflow/react/dist/style.css";
 import { useStore, useActiveProject } from "@/store";
 import { nodeTypes } from "@/components/nodes";
@@ -25,8 +26,66 @@ const defaultEdgeOptions = {
   style: { strokeWidth: 1 },
 };
 
+const FIT_VIEW_OPTIONS = {
+  padding: 0.34,
+  duration: 320,
+};
+
+const NODE_SIZE_FALLBACK: Record<string, { w: number; h: number }> = {
+  root: { w: 160, h: 56 },
+  domain: { w: 170, h: 50 },
+  feature: { w: 180, h: 70 },
+  task: { w: 180, h: 70 },
+};
+
+function nodeCenter(node: MindNode) {
+  const fallback = NODE_SIZE_FALLBACK[node.data.type] ?? NODE_SIZE_FALLBACK.task;
+  const width = node.measured?.width ?? fallback.w;
+  const height = node.measured?.height ?? fallback.h;
+  return {
+    x: node.position.x + width / 2,
+    y: node.position.y + height / 2,
+  };
+}
+
+function normalizeAngle(angle: number) {
+  const full = Math.PI * 2;
+  let next = angle % full;
+  if (next < 0) next += full;
+  return next;
+}
+
+function largestGapMidAngle(angles: number[]): number | null {
+  if (angles.length === 0) return null;
+  if (angles.length === 1) return normalizeAngle(angles[0] + Math.PI);
+
+  const sorted = [...angles].map(normalizeAngle).sort((a, b) => a - b);
+  let bestGap = -1;
+  let bestMid = sorted[0];
+
+  for (let i = 0; i < sorted.length; i++) {
+    const current = sorted[i];
+    const next = i === sorted.length - 1 ? sorted[0] + Math.PI * 2 : sorted[i + 1];
+    const gap = next - current;
+    if (gap > bestGap) {
+      bestGap = gap;
+      bestMid = current + gap / 2;
+    }
+  }
+
+  return normalizeAngle(bestMid);
+}
+
+function vectorToSide(dx: number, dy: number): AddButtonSide {
+  if (Math.abs(dx) > Math.abs(dy)) {
+    return dx >= 0 ? "right" : "left";
+  }
+  return dy >= 0 ? "bottom" : "top";
+}
+
 export function Canvas() {
   const project = useActiveProject();
+  const layoutVersion = useStore((s) => s.layoutVersion);
   const onNodesChange = useStore((s) => s.onNodesChange);
   const onEdgesChange = useStore((s) => s.onEdgesChange);
   const setSelectedNode = useStore((s) => s.setSelectedNode);
@@ -39,6 +98,8 @@ export function Canvas() {
   const selectedNodeId = useStore((s) => s.selectedNodeId);
   const editingNodeId = useStore((s) => s.editingNodeId);
   const deleteNode = useStore((s) => s.deleteNode);
+  const flowRef = useRef<ReactFlowInstance<MindNode, MindEdge> | null>(null);
+  const projectId = project?.id ?? null;
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -121,6 +182,110 @@ export function Canvas() {
     });
   }, [project]);
 
+  const displayNodes = useMemo(() => {
+    if (!project) return [];
+
+    const hierarchyEdges = project.edges.filter(
+      (edge) => edge.data?.edgeType === "hierarchy",
+    );
+    const nodeById = new Map(project.nodes.map((node) => [node.id, node]));
+    const childrenById = new Map<string, string[]>();
+    const parentById = new Map<string, string>();
+
+    for (const edge of hierarchyEdges) {
+      if (!childrenById.has(edge.source)) childrenById.set(edge.source, []);
+      childrenById.get(edge.source)!.push(edge.target);
+      parentById.set(edge.target, edge.source);
+    }
+
+    const root = project.nodes.find((node) => node.data.type === "root") ?? project.nodes[0];
+    if (!root) return project.nodes;
+    const rootCenter = nodeCenter(root);
+    const addSideById = new Map<string, AddButtonSide>();
+
+    const fallbackVector = (node: MindNode) => {
+      const parentId = parentById.get(node.id);
+      if (parentId) {
+        const parent = nodeById.get(parentId);
+        if (parent) {
+          const c = nodeCenter(node);
+          const p = nodeCenter(parent);
+          const vx = c.x - p.x;
+          const vy = c.y - p.y;
+          if (Math.hypot(vx, vy) > 1) return { x: vx, y: vy };
+        }
+      }
+
+      const c = nodeCenter(node);
+      const vx = c.x - rootCenter.x;
+      const vy = c.y - rootCenter.y;
+      if (Math.hypot(vx, vy) > 1) return { x: vx, y: vy };
+      return { x: 0, y: 1 };
+    };
+
+    for (const node of project.nodes) {
+      const children = childrenById.get(node.id) ?? [];
+      let vector: { x: number; y: number } | undefined;
+
+      if (node.id === root.id && children.length > 0) {
+        const childAngles = children
+          .map((childId) => {
+            const child = nodeById.get(childId);
+            if (!child) return null;
+            const c = nodeCenter(child);
+            return Math.atan2(c.y - rootCenter.y, c.x - rootCenter.x);
+          })
+          .filter((angle): angle is number => angle !== null);
+        const gapAngle = largestGapMidAngle(childAngles);
+        if (gapAngle !== null) {
+          vector = { x: Math.cos(gapAngle), y: Math.sin(gapAngle) };
+        }
+      }
+
+      if (!vector && children.length > 0) {
+        const c = nodeCenter(node);
+        let vx = 0;
+        let vy = 0;
+        for (const childId of children) {
+          const child = nodeById.get(childId);
+          if (!child) continue;
+          const cc = nodeCenter(child);
+          vx += cc.x - c.x;
+          vy += cc.y - c.y;
+        }
+        if (Math.hypot(vx, vy) > 1) {
+          vector = { x: vx, y: vy };
+        }
+      }
+
+      if (!vector) vector = fallbackVector(node);
+      addSideById.set(node.id, vectorToSide(vector.x, vector.y));
+    }
+
+    return project.nodes.map((node) => ({
+      ...node,
+      data: {
+        ...node.data,
+        uiAddSide: addSideById.get(node.id),
+      },
+    }));
+  }, [project]);
+
+  const handleInit = useCallback((instance: ReactFlowInstance<MindNode, MindEdge>) => {
+    flowRef.current = instance;
+    requestAnimationFrame(() => {
+      instance.fitView(FIT_VIEW_OPTIONS);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!projectId || !flowRef.current) return;
+    const rafId = requestAnimationFrame(() => {
+      flowRef.current?.fitView(FIT_VIEW_OPTIONS);
+    });
+    return () => cancelAnimationFrame(rafId);
+  }, [projectId, layoutVersion]);
+
   if (!project) {
     return (
       <div className="flex h-full items-center justify-center text-text-tertiary text-sm">
@@ -128,6 +293,8 @@ export function Canvas() {
       </div>
     );
   }
+
+  const showGettingStartedTip = project.nodes.length <= 1;
 
   return (
     <div className="relative h-full">
@@ -138,9 +305,19 @@ export function Canvas() {
             : "Click the blocking node first"}
         </div>
       )}
+      {showGettingStartedTip && (
+        <div className="absolute top-4 right-4 z-10 max-w-[280px] rounded-lg border border-border bg-surface/95 px-3 py-2 text-[11px] leading-relaxed text-text-secondary shadow-sm">
+          <span className="font-semibold text-text-primary">Quick start:</span>{" "}
+          click the center node, then use{" "}
+          <span className="font-semibold">Add first domain</span> in the left panel.
+        </div>
+      )}
       <ReactFlow
-        nodes={project.nodes}
+        nodes={displayNodes}
         edges={styledEdges}
+        onInit={handleInit}
+        minZoom={0.01}
+        maxZoom={2}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         onNodesChange={onNodesChange}
@@ -149,8 +326,6 @@ export function Canvas() {
         onPaneClick={onPaneClick}
         defaultEdgeOptions={defaultEdgeOptions}
         connectionLineType={ConnectionLineType.Bezier}
-        fitView
-        fitViewOptions={{ padding: 0.3 }}
         proOptions={{ hideAttribution: true }}
       >
         <Background gap={28} size={0.6} color="#dddad4" />
