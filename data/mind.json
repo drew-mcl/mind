@@ -1,0 +1,745 @@
+{
+  "id": "mind",
+  "name": "mind",
+  "nodes": [
+    {
+      "id": "mind-root",
+      "type": "root",
+      "position": {
+        "x": -63.5,
+        "y": -36
+      },
+      "data": {
+        "label": "mind",
+        "type": "root"
+      },
+      "measured": {
+        "width": 127,
+        "height": 72
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "node-1771458835867-2",
+      "type": "domain",
+      "position": {
+        "x": 13.797326648268864,
+        "y": -220.29992861871952
+      },
+      "data": {
+        "label": "task mangement",
+        "type": "domain"
+      },
+      "measured": {
+        "width": 161,
+        "height": 52
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "node-1771458850967-3",
+      "type": "feature",
+      "position": {
+        "x": 79.21731353264971,
+        "y": -788.8661216153996
+      },
+      "data": {
+        "label": "some kind of intergration plugin system like with athena - jira or linear int",
+        "type": "feature",
+        "status": "pending"
+      },
+      "measured": {
+        "width": 497,
+        "height": 70
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "node-1771458883904-4",
+      "type": "feature",
+      "position": {
+        "x": 241.410166970783,
+        "y": -738.4766883642727
+      },
+      "data": {
+        "label": "some claude code plugin, to direct features to adgents - or directly with athena",
+        "type": "feature",
+        "status": "pending"
+      },
+      "measured": {
+        "width": 539,
+        "height": 70
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "node-1771458901884-5",
+      "type": "domain",
+      "position": {
+        "x": 150.9688446482212,
+        "y": -24.619342344274262
+      },
+      "data": {
+        "label": "styling",
+        "type": "domain"
+      },
+      "measured": {
+        "width": 130,
+        "height": 52
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "node-1771458911529-6",
+      "type": "feature",
+      "position": {
+        "x": 381.3502894027,
+        "y": -642.2354351330639
+      },
+      "data": {
+        "label": "athena, choose directly from mind task, drop down list parse",
+        "type": "feature",
+        "status": "pending"
+      },
+      "measured": {
+        "width": 422,
+        "height": 70
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "node-1771458935300-7",
+      "type": "feature",
+      "position": {
+        "x": 597.0268390313847,
+        "y": -331.79535505705
+      },
+      "data": {
+        "label": "colours of domains are not randomly cycled - two reds in this example",
+        "type": "feature",
+        "status": "pending"
+      },
+      "measured": {
+        "width": 483,
+        "height": 70
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "node-1771458952621-8",
+      "type": "feature",
+      "position": {
+        "x": 651.3359294570517,
+        "y": -217.21621873528375
+      },
+      "data": {
+        "label": "status bar 'in progress' dosnt look to good",
+        "type": "feature",
+        "status": "pending"
+      },
+      "measured": {
+        "width": 307,
+        "height": 70
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "node-1771458974475-9",
+      "type": "domain",
+      "position": {
+        "x": 61.29578209764462,
+        "y": 149.19652821501367
+      },
+      "data": {
+        "label": "retention",
+        "type": "domain"
+      },
+      "measured": {
+        "width": 130,
+        "height": 52
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "node-1771458981250-10",
+      "type": "feature",
+      "position": {
+        "x": 267.86701470932684,
+        "y": 475.3022662472382
+      },
+      "data": {
+        "label": "what repo do we keep these in?",
+        "type": "feature",
+        "status": "pending"
+      },
+      "measured": {
+        "width": 244,
+        "height": 70
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "node-1771458996863-11",
+      "type": "feature",
+      "position": {
+        "x": 678.7737634887308,
+        "y": -93.42194969686977
+      },
+      "data": {
+        "label": "rearange button caused overlaps between long tasks",
+        "type": "feature",
+        "status": "pending"
+      },
+      "measured": {
+        "width": 375,
+        "height": 70
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "node-1771459011167-12",
+      "type": "domain",
+      "position": {
+        "x": -62.71141950821155,
+        "y": 189.96113185844902
+      },
+      "data": {
+        "label": "testing",
+        "type": "domain"
+      },
+      "measured": {
+        "width": 130,
+        "height": 52
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "node-1771459015675-13",
+      "type": "feature",
+      "position": {
+        "x": 10.729965260564668,
+        "y": 737.4939699004894
+      },
+      "data": {
+        "label": "how do we test the UI?",
+        "type": "feature",
+        "status": "pending"
+      },
+      "measured": {
+        "width": 189,
+        "height": 70
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "node-1771459034946-14",
+      "type": "domain",
+      "position": {
+        "x": -214.77291035280592,
+        "y": 129.60373838279133
+      },
+      "data": {
+        "label": "roadmap",
+        "type": "domain"
+      },
+      "measured": {
+        "width": 130,
+        "height": 52
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "node-1771459042458-15",
+      "type": "feature",
+      "position": {
+        "x": -511.22256783432215,
+        "y": 622.5696785819637
+      },
+      "data": {
+        "label": "how do we create a roadmap from our data?",
+        "type": "feature",
+        "status": "pending"
+      },
+      "measured": {
+        "width": 322,
+        "height": 70
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "node-1771459053117-16",
+      "type": "feature",
+      "position": {
+        "x": -642.2634569692791,
+        "y": 528.3743838858036
+      },
+      "data": {
+        "label": "do we need to have some 'deadline' or arrival date on the features so they can filter up",
+        "type": "feature",
+        "status": "pending"
+      },
+      "measured": {
+        "width": 577,
+        "height": 70
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "node-1771459079104-17",
+      "type": "feature",
+      "position": {
+        "x": -741.3924307080529,
+        "y": 401.02480699732695
+      },
+      "data": {
+        "label": "I guess the domains are the vertical colloums for roadmap",
+        "type": "feature",
+        "status": "pending"
+      },
+      "measured": {
+        "width": 406,
+        "height": 70
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "node-1771459097758-18",
+      "type": "feature",
+      "position": {
+        "x": -179.07639197863114,
+        "y": 739.2637607303802
+      },
+      "data": {
+        "label": "general react testing",
+        "type": "feature",
+        "status": "pending"
+      },
+      "measured": {
+        "width": 177,
+        "height": 70
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "node-1771459111175-19",
+      "type": "feature",
+      "position": {
+        "x": 677.9631756373923,
+        "y": 33.37394428412806
+      },
+      "data": {
+        "label": "I dont like how the button looks to add something, it should just be a plus busston and inhenrlty",
+        "type": "feature",
+        "status": "pending"
+      },
+      "measured": {
+        "width": 635,
+        "height": 70
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "node-1771459132146-20",
+      "type": "domain",
+      "position": {
+        "x": -305.9637967935852,
+        "y": -28.021521394606932
+      },
+      "data": {
+        "label": "project mangement",
+        "type": "domain"
+      },
+      "measured": {
+        "width": 180,
+        "height": 52
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "node-1771459138525-21",
+      "type": "feature",
+      "position": {
+        "x": -777.1473517740034,
+        "y": 42.143614565517694
+      },
+      "data": {
+        "label": "need a way to edit and delete",
+        "type": "feature",
+        "status": "pending"
+      },
+      "measured": {
+        "width": 232,
+        "height": 70
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "node-1771459181213-22",
+      "type": "feature",
+      "position": {
+        "x": 648.9448510975528,
+        "y": 156.80729724841294
+      },
+      "data": {
+        "label": "When you edit a long card, it shortens it",
+        "type": "feature",
+        "status": "pending"
+      },
+      "measured": {
+        "width": 294,
+        "height": 70
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "node-1771459201496-23",
+      "type": "domain",
+      "position": {
+        "x": -253.98662127989604,
+        "y": -164.17702280167342
+      },
+      "data": {
+        "label": "athena intergration",
+        "type": "domain"
+      },
+      "measured": {
+        "width": 176,
+        "height": 52
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "node-1771459218887-24",
+      "type": "feature",
+      "position": {
+        "x": -547.6125690188733,
+        "y": -407.6190200072924
+      },
+      "data": {
+        "label": "Ideally, the best - optimal use case here is I just click or some icon (we can think of something fun) and it will spin up an athena adgent to work on it",
+        "type": "feature",
+        "status": "pending"
+      },
+      "measured": {
+        "width": 954,
+        "height": 70
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "node-1771459297133-25",
+      "type": "domain",
+      "position": {
+        "x": -141.38402047325806,
+        "y": -233.06629398525592
+      },
+      "data": {
+        "label": "general branding",
+        "type": "domain"
+      },
+      "measured": {
+        "width": 160,
+        "height": 52
+      },
+      "selected": true,
+      "dragging": false
+    },
+    {
+      "id": "node-1771459307162-27",
+      "type": "feature",
+      "position": {
+        "x": -269.86764974397556,
+        "y": -608.0133743161057
+      },
+      "data": {
+        "label": "logo should be some very simple - line drawn brain, clean minimilistic",
+        "type": "feature",
+        "status": "pending"
+      },
+      "measured": {
+        "width": 474,
+        "height": 70
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "node-1771459554158-1",
+      "type": "feature",
+      "position": {
+        "x": 593.175283667505,
+        "y": 270.68271659679783
+      },
+      "data": {
+        "label": "what typography to use?",
+        "type": "feature",
+        "status": "pending"
+      },
+      "measured": {
+        "width": 203,
+        "height": 70
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "node-1771460363677-1",
+      "type": "feature",
+      "position": {
+        "x": -733.1517153263047,
+        "y": -136.7040037256603
+      },
+      "data": {
+        "label": "",
+        "type": "feature",
+        "status": "pending"
+      },
+      "measured": {
+        "width": 120,
+        "height": 70
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-mind-root-node-1771458835867-2",
+      "source": "mind-root",
+      "target": "node-1771458835867-2",
+      "data": {
+        "edgeType": "hierarchy"
+      }
+    },
+    {
+      "id": "e-node-1771458835867-2-node-1771458850967-3",
+      "source": "node-1771458835867-2",
+      "target": "node-1771458850967-3",
+      "data": {
+        "edgeType": "hierarchy"
+      }
+    },
+    {
+      "id": "e-node-1771458835867-2-node-1771458883904-4",
+      "source": "node-1771458835867-2",
+      "target": "node-1771458883904-4",
+      "data": {
+        "edgeType": "hierarchy"
+      }
+    },
+    {
+      "id": "e-mind-root-node-1771458901884-5",
+      "source": "mind-root",
+      "target": "node-1771458901884-5",
+      "data": {
+        "edgeType": "hierarchy"
+      }
+    },
+    {
+      "id": "e-node-1771458835867-2-node-1771458911529-6",
+      "source": "node-1771458835867-2",
+      "target": "node-1771458911529-6",
+      "data": {
+        "edgeType": "hierarchy"
+      }
+    },
+    {
+      "id": "e-node-1771458901884-5-node-1771458935300-7",
+      "source": "node-1771458901884-5",
+      "target": "node-1771458935300-7",
+      "data": {
+        "edgeType": "hierarchy"
+      }
+    },
+    {
+      "id": "e-node-1771458901884-5-node-1771458952621-8",
+      "source": "node-1771458901884-5",
+      "target": "node-1771458952621-8",
+      "data": {
+        "edgeType": "hierarchy"
+      }
+    },
+    {
+      "id": "e-mind-root-node-1771458974475-9",
+      "source": "mind-root",
+      "target": "node-1771458974475-9",
+      "data": {
+        "edgeType": "hierarchy"
+      }
+    },
+    {
+      "id": "e-node-1771458974475-9-node-1771458981250-10",
+      "source": "node-1771458974475-9",
+      "target": "node-1771458981250-10",
+      "data": {
+        "edgeType": "hierarchy"
+      }
+    },
+    {
+      "id": "e-node-1771458901884-5-node-1771458996863-11",
+      "source": "node-1771458901884-5",
+      "target": "node-1771458996863-11",
+      "data": {
+        "edgeType": "hierarchy"
+      }
+    },
+    {
+      "id": "e-mind-root-node-1771459011167-12",
+      "source": "mind-root",
+      "target": "node-1771459011167-12",
+      "data": {
+        "edgeType": "hierarchy"
+      }
+    },
+    {
+      "id": "e-node-1771459011167-12-node-1771459015675-13",
+      "source": "node-1771459011167-12",
+      "target": "node-1771459015675-13",
+      "data": {
+        "edgeType": "hierarchy"
+      }
+    },
+    {
+      "id": "e-mind-root-node-1771459034946-14",
+      "source": "mind-root",
+      "target": "node-1771459034946-14",
+      "data": {
+        "edgeType": "hierarchy"
+      }
+    },
+    {
+      "id": "e-node-1771459034946-14-node-1771459042458-15",
+      "source": "node-1771459034946-14",
+      "target": "node-1771459042458-15",
+      "data": {
+        "edgeType": "hierarchy"
+      }
+    },
+    {
+      "id": "e-node-1771459034946-14-node-1771459053117-16",
+      "source": "node-1771459034946-14",
+      "target": "node-1771459053117-16",
+      "data": {
+        "edgeType": "hierarchy"
+      }
+    },
+    {
+      "id": "e-node-1771459034946-14-node-1771459079104-17",
+      "source": "node-1771459034946-14",
+      "target": "node-1771459079104-17",
+      "data": {
+        "edgeType": "hierarchy"
+      }
+    },
+    {
+      "id": "e-node-1771459011167-12-node-1771459097758-18",
+      "source": "node-1771459011167-12",
+      "target": "node-1771459097758-18",
+      "data": {
+        "edgeType": "hierarchy"
+      }
+    },
+    {
+      "id": "e-node-1771458901884-5-node-1771459111175-19",
+      "source": "node-1771458901884-5",
+      "target": "node-1771459111175-19",
+      "data": {
+        "edgeType": "hierarchy"
+      }
+    },
+    {
+      "id": "e-mind-root-node-1771459132146-20",
+      "source": "mind-root",
+      "target": "node-1771459132146-20",
+      "data": {
+        "edgeType": "hierarchy"
+      }
+    },
+    {
+      "id": "e-node-1771459132146-20-node-1771459138525-21",
+      "source": "node-1771459132146-20",
+      "target": "node-1771459138525-21",
+      "data": {
+        "edgeType": "hierarchy"
+      }
+    },
+    {
+      "id": "e-node-1771458901884-5-node-1771459181213-22",
+      "source": "node-1771458901884-5",
+      "target": "node-1771459181213-22",
+      "data": {
+        "edgeType": "hierarchy"
+      }
+    },
+    {
+      "id": "e-mind-root-node-1771459201496-23",
+      "source": "mind-root",
+      "target": "node-1771459201496-23",
+      "data": {
+        "edgeType": "hierarchy"
+      }
+    },
+    {
+      "id": "e-node-1771459201496-23-node-1771459218887-24",
+      "source": "node-1771459201496-23",
+      "target": "node-1771459218887-24",
+      "data": {
+        "edgeType": "hierarchy"
+      }
+    },
+    {
+      "id": "e-mind-root-node-1771459297133-25",
+      "source": "mind-root",
+      "target": "node-1771459297133-25",
+      "data": {
+        "edgeType": "hierarchy"
+      }
+    },
+    {
+      "id": "e-node-1771459297133-25-node-1771459307162-27",
+      "source": "node-1771459297133-25",
+      "target": "node-1771459307162-27",
+      "data": {
+        "edgeType": "hierarchy"
+      }
+    },
+    {
+      "id": "e-node-1771458901884-5-node-1771459554158-1",
+      "source": "node-1771458901884-5",
+      "target": "node-1771459554158-1",
+      "data": {
+        "edgeType": "hierarchy"
+      }
+    },
+    {
+      "id": "e-node-1771459132146-20-node-1771460363677-1",
+      "source": "node-1771459132146-20",
+      "target": "node-1771460363677-1",
+      "data": {
+        "edgeType": "hierarchy"
+      }
+    }
+  ]
+}

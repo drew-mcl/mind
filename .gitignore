@@ -1,0 +1,11 @@
+node_modules
+dist
+tsconfig.tsbuildinfo
+*.png
+
+# Go build output
+/mind
+
+# IDE / tooling
+.claude/
+.playwright-mcp/

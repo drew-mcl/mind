@@ -1,0 +1,482 @@
+{
+  "id": "sre",
+  "name": "SRE",
+  "nodes": [
+    {
+      "id": "root",
+      "type": "root",
+      "position": {
+        "x": -307.56381978985684,
+        "y": 24.18793992995228
+      },
+      "data": {
+        "label": "SRE",
+        "type": "root",
+        "description": "Site Reliability Engineering"
+      },
+      "measured": {
+        "width": 230,
+        "height": 90
+      },
+      "selected": true,
+      "dragging": false
+    },
+    {
+      "id": "logging",
+      "type": "domain",
+      "position": {
+        "x": 53.350015757557316,
+        "y": -164.88914544133752
+      },
+      "data": {
+        "label": "Logging",
+        "type": "domain",
+        "description": "Centralized logging infrastructure"
+      },
+      "measured": {
+        "width": 212,
+        "height": 73
+      },
+      "selected": false
+    },
+    {
+      "id": "monitoring",
+      "type": "domain",
+      "position": {
+        "x": -63.59753166360636,
+        "y": 161.61386808871546
+      },
+      "data": {
+        "label": "Monitoring",
+        "type": "domain",
+        "description": "Metrics and observability"
+      },
+      "measured": {
+        "width": 182,
+        "height": 73
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "alerting",
+      "type": "domain",
+      "position": {
+        "x": -269.49472142944023,
+        "y": -142.66750636403054
+      },
+      "data": {
+        "label": "Alerting",
+        "type": "domain",
+        "description": "Incident detection and notification"
+      },
+      "measured": {
+        "width": 212,
+        "height": 73
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "log-aggregation",
+      "type": "feature",
+      "position": {
+        "x": 174.83827791052974,
+        "y": -489.7049308256876
+      },
+      "data": {
+        "label": "Log aggregation",
+        "type": "feature",
+        "status": "done",
+        "description": "Deploy ELK stack"
+      },
+      "measured": {
+        "width": 148,
+        "height": 70
+      }
+    },
+    {
+      "id": "structured-logging",
+      "type": "feature",
+      "position": {
+        "x": 329.441153300049,
+        "y": -384.72365409740473
+      },
+      "data": {
+        "label": "Structured logging",
+        "type": "feature",
+        "status": "in_progress",
+        "assignee": "drew"
+      },
+      "measured": {
+        "width": 164,
+        "height": 70
+      }
+    },
+    {
+      "id": "log-retention",
+      "type": "feature",
+      "position": {
+        "x": 404.91332680165965,
+        "y": -204.02178056315347
+      },
+      "data": {
+        "label": "Log retention policy",
+        "type": "feature",
+        "status": "pending"
+      },
+      "measured": {
+        "width": 172,
+        "height": 70
+      }
+    },
+    {
+      "id": "prometheus",
+      "type": "feature",
+      "position": {
+        "x": 291.8522990705052,
+        "y": 310.32405752334876
+      },
+      "data": {
+        "label": "Deploy Prometheus",
+        "type": "feature",
+        "status": "done"
+      },
+      "measured": {
+        "width": 170,
+        "height": 70
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "grafana-dashboards",
+      "type": "feature",
+      "position": {
+        "x": 191.67674938700645,
+        "y": 446.65528565399256
+      },
+      "data": {
+        "label": "Grafana dashboards",
+        "type": "feature",
+        "status": "in_progress",
+        "assignee": "drew"
+      },
+      "measured": {
+        "width": 175,
+        "height": 70
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "slo-tracking",
+      "type": "feature",
+      "position": {
+        "x": 74.39718101504474,
+        "y": 525.6965453236649
+      },
+      "data": {
+        "label": "SLO tracking",
+        "type": "feature",
+        "status": "blocked"
+      },
+      "measured": {
+        "width": 128,
+        "height": 70
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "pagerduty",
+      "type": "feature",
+      "position": {
+        "x": -601.3916210302768,
+        "y": -149.5399398059166
+      },
+      "data": {
+        "label": "PagerDuty integration",
+        "type": "feature",
+        "status": "pending"
+      },
+      "measured": {
+        "width": 184,
+        "height": 70
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "alert-rules",
+      "type": "feature",
+      "position": {
+        "x": -475.6845835439784,
+        "y": -375.6681498429444
+      },
+      "data": {
+        "label": "Alert rules",
+        "type": "feature",
+        "status": "pending"
+      },
+      "measured": {
+        "width": 120,
+        "height": 70
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "runbooks",
+      "type": "feature",
+      "position": {
+        "x": -333.7387706156725,
+        "y": -468.41517310854374
+      },
+      "data": {
+        "label": "Write runbooks",
+        "type": "feature",
+        "status": "pending",
+        "assignee": "drew"
+      },
+      "measured": {
+        "width": 144,
+        "height": 70
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "node-1771448126203-1",
+      "type": "feature",
+      "position": {
+        "x": -74.17179918361745,
+        "y": 540.0191670082907
+      },
+      "data": {
+        "label": "",
+        "type": "feature",
+        "status": "pending"
+      },
+      "measured": {
+        "width": 120,
+        "height": 70
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "node-1771458263910-1",
+      "type": "feature",
+      "position": {
+        "x": -218.89593596611104,
+        "y": 493.3848608020028
+      },
+      "data": {
+        "label": "",
+        "type": "feature",
+        "status": "pending"
+      },
+      "measured": {
+        "width": 120,
+        "height": 70
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "node-1771458269735-2",
+      "type": "feature",
+      "position": {
+        "x": -333.6645310860916,
+        "y": 393.64518034850596
+      },
+      "data": {
+        "label": "",
+        "type": "feature",
+        "status": "pending"
+      },
+      "measured": {
+        "width": 120,
+        "height": 70
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "node-1771458759913-1",
+      "type": "task",
+      "position": {
+        "x": -1029.252132254938,
+        "y": -160.8673497567036
+      },
+      "data": {
+        "label": "",
+        "type": "task",
+        "status": "pending"
+      },
+      "measured": {
+        "width": 120,
+        "height": 70
+      },
+      "selected": false,
+      "dragging": false
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-root-logging",
+      "source": "root",
+      "target": "logging",
+      "data": {
+        "edgeType": "hierarchy"
+      }
+    },
+    {
+      "id": "e-root-monitoring",
+      "source": "root",
+      "target": "monitoring",
+      "data": {
+        "edgeType": "hierarchy"
+      }
+    },
+    {
+      "id": "e-root-alerting",
+      "source": "root",
+      "target": "alerting",
+      "data": {
+        "edgeType": "hierarchy"
+      }
+    },
+    {
+      "id": "e-logging-agg",
+      "source": "logging",
+      "target": "log-aggregation",
+      "data": {
+        "edgeType": "hierarchy"
+      }
+    },
+    {
+      "id": "e-logging-struct",
+      "source": "logging",
+      "target": "structured-logging",
+      "data": {
+        "edgeType": "hierarchy"
+      }
+    },
+    {
+      "id": "e-logging-retention",
+      "source": "logging",
+      "target": "log-retention",
+      "data": {
+        "edgeType": "hierarchy"
+      }
+    },
+    {
+      "id": "e-monitoring-prom",
+      "source": "monitoring",
+      "target": "prometheus",
+      "data": {
+        "edgeType": "hierarchy"
+      }
+    },
+    {
+      "id": "e-monitoring-grafana",
+      "source": "monitoring",
+      "target": "grafana-dashboards",
+      "data": {
+        "edgeType": "hierarchy"
+      }
+    },
+    {
+      "id": "e-monitoring-slo",
+      "source": "monitoring",
+      "target": "slo-tracking",
+      "data": {
+        "edgeType": "hierarchy"
+      }
+    },
+    {
+      "id": "e-alerting-pd",
+      "source": "alerting",
+      "target": "pagerduty",
+      "data": {
+        "edgeType": "hierarchy"
+      }
+    },
+    {
+      "id": "e-alerting-rules",
+      "source": "alerting",
+      "target": "alert-rules",
+      "data": {
+        "edgeType": "hierarchy"
+      }
+    },
+    {
+      "id": "e-alerting-runbooks",
+      "source": "alerting",
+      "target": "runbooks",
+      "data": {
+        "edgeType": "hierarchy"
+      },
+      "selected": false
+    },
+    {
+      "id": "e-blocks-prom-slo",
+      "source": "prometheus",
+      "target": "slo-tracking",
+      "data": {
+        "edgeType": "blocks"
+      }
+    },
+    {
+      "id": "e-monitoring-node-1771448126203-1",
+      "source": "monitoring",
+      "target": "node-1771448126203-1",
+      "data": {
+        "edgeType": "hierarchy"
+      }
+    },
+    {
+      "id": "e-blocks-pagerduty-alert-rules",
+      "source": "pagerduty",
+      "target": "alert-rules",
+      "data": {
+        "edgeType": "blocks"
+      },
+      "selected": false
+    },
+    {
+      "id": "e-monitoring-node-1771458263910-1",
+      "source": "monitoring",
+      "target": "node-1771458263910-1",
+      "data": {
+        "edgeType": "hierarchy"
+      }
+    },
+    {
+      "id": "e-monitoring-node-1771458269735-2",
+      "source": "monitoring",
+      "target": "node-1771458269735-2",
+      "data": {
+        "edgeType": "hierarchy"
+      }
+    },
+    {
+      "id": "e-blocks-alert-rules-runbooks",
+      "source": "alert-rules",
+      "target": "runbooks",
+      "data": {
+        "edgeType": "blocks"
+      }
+    },
+    {
+      "id": "e-pagerduty-node-1771458759913-1",
+      "source": "pagerduty",
+      "target": "node-1771458759913-1",
+      "data": {
+        "edgeType": "hierarchy"
+      }
+    }
+  ]
+}
