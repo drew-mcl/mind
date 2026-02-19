@@ -1,5 +1,13 @@
 import type { MindNode, MindEdge } from "@/types";
 
+export type LayoutDensity = "compact" | "balanced" | "exploded";
+
+const DENSITY_FACTORS: Record<LayoutDensity, { pad: number; ring: number; angle: number; drift: number }> = {
+  compact: { pad: 0.6, ring: 0.7, angle: 0.5, drift: 0.6 },
+  balanced: { pad: 1.0, ring: 1.0, angle: 1.0, drift: 1.0 },
+  exploded: { pad: 1.8, ring: 1.6, angle: 1.5, drift: 1.8 },
+};
+
 type AdjMap = Map<string, string[]>;
 
 function buildAdjacency(edges: MindEdge[]): AdjMap {
@@ -27,24 +35,24 @@ const NODE_DIMS: Record<string, { w: number; h: number }> = {
   task: { w: 180, h: 70 },
 };
 
-const NODE_PAD = 40; // Substantially increased for air
+const NODE_PAD = 24; // Reduced from 28
 // Long cards need influence, but fully trusting measured width
 // causes runaway radial expansion on dense maps.
 const SOFT_WIDTH_CAP = 220;
 const SOFT_WIDTH_FALLOFF = 0.52;
 const MAX_LAYOUT_WIDTH = 340;
-const COLLISION_PAD_X = 28; // Increased from 14-16
-const COLLISION_PAD_Y = 32; // Increased from 18-20
+const COLLISION_PAD_X = 16; // Reduced from 20
+const COLLISION_PAD_Y = 20; // Reduced from 24
 const COLLISION_ITERS = 56;
 const COLLISION_STOP_THRESHOLD = 0.25;
 const SPRING_BACK = 0.045;
-const MAX_RADIAL_DRIFT = 220; // Increased for flexibility
-const MIN_RADIAL_DRIFT = 80;  // More breathing room from anchor
-const TARGET_RADIUS_BASE = 320;
-const TARGET_RADIUS_PER_SQRT_NODE = 120;
-const TARGET_RADIUS_PER_EXTRA_ROOT_BRANCH = 32;
-const INNER_CORE_RADIUS = 90;
-const INNER_CORE_DEPTH_STEP = 32;
+const MAX_RADIAL_DRIFT = 160; // Reduced from 180
+const MIN_RADIAL_DRIFT = 52;  // Reduced from 60
+const TARGET_RADIUS_BASE = 280;
+const TARGET_RADIUS_PER_SQRT_NODE = 104;
+const TARGET_RADIUS_PER_EXTRA_ROOT_BRANCH = 24;
+const INNER_CORE_RADIUS = 68; // Reduced from 76
+const INNER_CORE_DEPTH_STEP = 24; // Reduced from 28
 const TASK_CARD_MAX_WIDTH = 380;
 const TASK_CARD_INNER_MAX_WIDTH = 300;
 const TASK_CARD_INNER_MIN_WIDTH = 120;
@@ -54,10 +62,10 @@ const TASK_CARD_MAX_HEIGHT = 220;
 
 const CHILD_OUTWARD_GAP: Record<string, number> = {
   root: 0,
-  domain: 120,
-  goal: 110,
-  feature: 100,
-  task: 90,
+  domain: 90, // Reduced from 100
+  goal: 80,    // Reduced from 90
+  feature: 70, // Reduced from 80
+  task: 60,    // Reduced from 70
 };
 
 type LayoutEntry = { id: string; x: number; y: number };
@@ -171,8 +179,10 @@ function buildSubtreeDemand(
   nodeMap: Map<string, MindNode>,
   adj: AdjMap,
   layoutDims: Map<string, NodeDims>,
+  density: LayoutDensity,
 ): Map<string, number> {
   const memo = new Map<string, number>();
+  const factor = DENSITY_FACTORS[density];
 
   const demandFor = (id: string): number => {
     const existing = memo.get(id);
@@ -182,7 +192,7 @@ function buildSubtreeDemand(
     if (!node) return 0;
 
     const dims = layoutDims.get(id) ?? NODE_DIMS.task;
-    const selfDemand = dims.w + NODE_PAD;
+    const selfDemand = dims.w + NODE_PAD * factor.pad;
     const kids = adj.get(id) ?? [];
     if (kids.length === 0) {
       memo.set(id, selfDemand);
@@ -199,36 +209,31 @@ function buildSubtreeDemand(
   return memo;
 }
 
-// Calculate minimum ring radius so children don't overlap at a given sweep
 function minRadiusForChildren(
   childIds: string[],
   layoutDims: Map<string, NodeDims>,
   sweep: number,
+  density: LayoutDensity,
 ): number {
   if (childIds.length === 0) return 0;
+  const factor = DENSITY_FACTORS[density];
 
-  // Total arc length needed = sum of (node width + padding)
   let totalArc = 0;
   for (const id of childIds) {
     const childDims = layoutDims.get(id);
     if (!childDims) continue;
-    totalArc += childDims.w + NODE_PAD;
+    totalArc += childDims.w + NODE_PAD * factor.pad;
   }
 
-  // Arc length = radius * sweep, so radius = totalArc / sweep
-  // But sweep might be < 2π, so we need enough radius for the arc
   return totalArc / Math.max(sweep * 0.96, 0.1);
 }
 
-// Base ring gaps — minimum distance between rings.
-// Kept small so single-child subtrees stay tight; minRadiusForChildren
-// will push busier subtrees outward only when they actually need space.
 const BASE_RING_GAP: Record<string, number> = {
   root: 0,
-  domain: 240,
-  goal: 200,
-  feature: 180,
-  task: 140,
+  domain: 190,
+  goal: 150,
+  feature: 130,
+  task: 100,
 };
 
 function enforceSweepFloors(
@@ -288,11 +293,13 @@ function layoutRadial(
   sweep: number,
   layoutDims: Map<string, NodeDims>,
   demand: Map<string, number>,
+  density: LayoutDensity,
   results: LayoutEntry[],
 ) {
   const node = nodeMap.get(nodeId);
   if (!node) return;
 
+  const factor = DENSITY_FACTORS[density];
   const dims = layoutDims.get(nodeId) ?? nodeDims(node);
   results.push({ id: nodeId, x: cx - dims.w / 2, y: cy - dims.h / 2 });
 
@@ -300,11 +307,9 @@ function layoutRadial(
   if (children.length === 0) return;
 
   const childType = nodeMap.get(children[0])?.data.type ?? "task";
-  const baseGap = BASE_RING_GAP[childType] ?? 250;
+  const baseGap = (BASE_RING_GAP[childType] ?? 250) * factor.ring;
 
-  // Calculate minimum radius to fit all children without overlap.
-  // Allow dense branches to expand farther, but keep tight subtrees near root.
-  const minRadius = minRadiusForChildren(children, layoutDims, sweep);
+  const minRadius = minRadiusForChildren(children, layoutDims, sweep, density);
   const branchDemand = children.map((id) => demand.get(id) ?? 1);
   const totalDemand = branchDemand.reduce((a, b) => a + b, 0);
   const avgDemand = totalDemand / Math.max(1, children.length);
@@ -314,24 +319,18 @@ function layoutRadial(
   const maxRadius = parentRadius + baseGap * 1.65 + demandBoost + children.length * 4;
   const ringRadius = Math.min(Math.max(parentRadius + baseGap, minRadius), maxRadius);
 
-  // Reserve a larger constant angular gap between siblings.
-  const gapAngle = Math.min(0.18, 48 / Math.max(1, ringRadius));
+  const gapAngle = Math.min(0.1 * factor.angle, (28 * factor.angle) / Math.max(1, ringRadius));
   const totalGap = gapAngle * Math.max(0, children.length - 1);
-  const usableSweep = Math.max(sweep - totalGap, sweep * 0.6);
+  const usableSweep = Math.max(sweep - totalGap, sweep * 0.75);
 
-  // Weight sweep allocation by subtree demand so dense branches get
-  // more angular space than shallow sibling groups.
-
-  // Also factor in the child's own width for minimum angle
   const minAngles = children.map((childId) => {
     const childDims = layoutDims.get(childId);
     if (!childDims) return 0;
-    const w = childDims.w + NODE_PAD;
+    const w = childDims.w + NODE_PAD * factor.pad;
     const ratio = Math.min(w / (2 * ringRadius), 1);
     return 2 * Math.asin(ratio);
   });
 
-  // Blend: mostly even spacing with demand shaping.
   const totalMinAngle = minAngles.reduce((a, b) => a + b, 0);
   const desiredSweeps = children.map((_, i) => {
     const evenWeight = 1 / children.length;
@@ -360,6 +359,7 @@ function layoutRadial(
       childSweep,
       layoutDims,
       demand,
+      density,
       results,
     );
 
@@ -370,7 +370,9 @@ function layoutRadial(
 export function applyRadialLayout(
   nodes: MindNode[],
   edges: MindEdge[],
+  density: LayoutDensity = "balanced",
 ): { nodes: MindNode[]; edges: MindEdge[] } {
+  const factor = DENSITY_FACTORS[density];
   const adj = buildAdjacency(edges);
   const parentById = buildParentMap(edges);
   const nodeMap = new Map(nodes.map((n) => [n.id, n]));
@@ -383,7 +385,7 @@ export function applyRadialLayout(
   const layoutDims = new Map<string, NodeDims>(
     nodes.map((node) => [node.id, nodeDims(node)]),
   );
-  const demand = buildSubtreeDemand(nodeMap, adj, layoutDims);
+  const demand = buildSubtreeDemand(nodeMap, adj, layoutDims, density);
   layoutRadial(
     rootId,
     nodeMap,
@@ -395,6 +397,7 @@ export function applyRadialLayout(
     Math.PI * 2,
     layoutDims,
     demand,
+    density,
     results,
   );
 
@@ -416,9 +419,9 @@ export function applyRadialLayout(
   if (rootAnchor) {
     const rootKids = adj.get(rootId) ?? [];
     const targetMaxRadius =
-      TARGET_RADIUS_BASE
+      (TARGET_RADIUS_BASE
       + Math.sqrt(nodes.length) * TARGET_RADIUS_PER_SQRT_NODE
-      + Math.max(0, rootKids.length - 6) * TARGET_RADIUS_PER_EXTRA_ROOT_BRANCH;
+      + Math.max(0, rootKids.length - 6) * TARGET_RADIUS_PER_EXTRA_ROOT_BRANCH) * factor.ring;
 
     let currentMaxRadius = 0;
     for (const id of ids) {
@@ -467,7 +470,6 @@ export function applyRadialLayout(
     const anchorRadius = Math.hypot(anchorDx, anchorDy);
     const currentRadius = Math.hypot(currentDx, currentDy);
 
-    // Keep descendants outward from their parent branch direction.
     let branchFloor = 0;
     const parentId = parentById.get(id);
     if (parentId) {
@@ -477,12 +479,11 @@ export function applyRadialLayout(
           parentCenter.x - rootFrame.x,
           parentCenter.y - rootFrame.y,
         );
-        const outwardGap = CHILD_OUTWARD_GAP[node.data.type] ?? CHILD_OUTWARD_GAP.task;
+        const outwardGap = (CHILD_OUTWARD_GAP[node.data.type] ?? CHILD_OUTWARD_GAP.task) * factor.pad;
         branchFloor = parentRadius + outwardGap;
       }
     }
 
-    // Keep deeper, wide cards from cutting through the root's inner cluster.
     const depth = depthById.get(id) ?? 1;
     let coreFloor = 0;
     if (depth >= 2) {
@@ -495,14 +496,14 @@ export function applyRadialLayout(
         Math.abs(Math.cos(angle)) * (dims.w / 2)
         + Math.abs(Math.sin(angle)) * (dims.h / 2);
       coreFloor =
-        INNER_CORE_RADIUS
-        + (depth - 2) * INNER_CORE_DEPTH_STEP
+        (INNER_CORE_RADIUS
+        + (depth - 2) * INNER_CORE_DEPTH_STEP) * factor.ring
         + radialHalfExtent;
     }
 
-    const minRadius = Math.max(0, anchorRadius - MIN_RADIAL_DRIFT, branchFloor, coreFloor);
+    const minRadius = Math.max(0, anchorRadius - MIN_RADIAL_DRIFT * factor.drift, branchFloor, coreFloor);
     const shellMax = Math.max(
-      anchorRadius + MAX_RADIAL_DRIFT + extraDrift,
+      anchorRadius + MAX_RADIAL_DRIFT * factor.drift + extraDrift,
       minRadius + 18,
     );
 
@@ -529,8 +530,8 @@ export function applyRadialLayout(
         const db = visualDimsMap.get(idB);
         if (!a || !b || !da || !db) continue;
 
-        const needX = (da.w + db.w) / 2 + COLLISION_PAD_X;
-        const needY = (da.h + db.h) / 2 + COLLISION_PAD_Y;
+        const needX = (da.w + db.w) / 2 + COLLISION_PAD_X * factor.pad;
+        const needY = (da.h + db.h) / 2 + COLLISION_PAD_Y * factor.pad;
         const dx = b.x - a.x;
         const dy = b.y - a.y;
         const overlapX = needX - Math.abs(dx);
@@ -567,7 +568,6 @@ export function applyRadialLayout(
     if (moved < COLLISION_STOP_THRESHOLD) break;
   }
 
-  // Final pass: resolve any residual collisions with looser radial bounds.
   for (let iter = 0; iter < 28; iter++) {
     let moved = 0;
     for (let i = 0; i < ids.length; i++) {
@@ -580,8 +580,8 @@ export function applyRadialLayout(
         const db = visualDimsMap.get(idB);
         if (!a || !b || !da || !db) continue;
 
-        const needX = (da.w + db.w) / 2 + COLLISION_PAD_X;
-        const needY = (da.h + db.h) / 2 + COLLISION_PAD_Y;
+        const needX = (da.w + db.w) / 2 + COLLISION_PAD_X * factor.pad;
+        const needY = (da.h + db.h) / 2 + COLLISION_PAD_Y * factor.pad;
         const dx = b.x - a.x;
         const dy = b.y - a.y;
         const overlapX = needX - Math.abs(dx);
@@ -604,7 +604,7 @@ export function applyRadialLayout(
       }
     }
 
-    for (const id of ids) clampToAnchorShell(id, 56);
+    for (const id of ids) clampToAnchorShell(id, 56 * factor.drift);
     if (moved < COLLISION_STOP_THRESHOLD) break;
   }
 

@@ -1,4 +1,5 @@
 import type { Node, Edge, OnNodesChange, OnEdgesChange } from "@xyflow/react";
+import type { LayoutDensity } from "@/lib/layout";
 
 export type NodeType = "root" | "domain" | "goal" | "feature" | "task";
 export type TaskStatus = "pending" | "in_progress" | "blocked" | "done";
@@ -49,7 +50,7 @@ export type MindStore = {
   focusedNodeId: string | null;
   sidebarCollapsed: boolean;
   autoFocusEnabled: boolean;
-  lockedNodeId: string | null;
+  currentDensity: LayoutDensity;
   confirmationModal: {
     isOpen: boolean;
     title: string;
@@ -72,7 +73,6 @@ export type MindStore = {
   setFocusedNode: (id: string | null) => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
   setAutoFocusEnabled: (enabled: boolean) => void;
-  setLockedNode: (id: string | null) => void;
   openConfirmationModal: (options: Omit<MindStore["confirmationModal"], "isOpen">) => void;
   closeConfirmationModal: () => void;
 
@@ -88,7 +88,7 @@ export type MindStore = {
   createProject: (name: string) => void;
   deleteProject: (id: string) => void;
   performDeleteProject: (id: string) => void;
-  applyLayout: (onComplete?: () => void) => void;
+  applyLayout: (density?: LayoutDensity, onComplete?: () => void) => void;
 
   // Connect mode
   connectMode: "off" | "blocking";

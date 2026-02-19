@@ -135,7 +135,6 @@ export function Canvas() {
   const setFocusedNode = useStore((s) => s.setFocusedNode);
   const deleteNode = useStore((s) => s.deleteNode);
   const autoFocusEnabled = useStore((s) => s.autoFocusEnabled);
-  const lockedNodeId = useStore((s) => s.lockedNodeId);
   const flowRef = useRef<ReactFlowInstance<MindNode, MindEdge> | null>(null);
   const projectId = project?.id ?? null;
 
@@ -411,16 +410,6 @@ export function Canvas() {
       prevProjectIdRef.current = projectId;
     }
   }, [projectId, project, autoFocusEnabled, layoutVersion]);
-
-  // Handle viewport locking
-  useEffect(() => {
-    if (!lockedNodeId || !flowRef.current || !project) return;
-    const node = project.nodes.find(n => n.id === lockedNodeId);
-    if (!node) return;
-
-    const { x, y } = nodeCenter(node);
-    flowRef.current.setCenter(x, y, { duration: 200 });
-  }, [lockedNodeId, project?.nodes, project?.edges]);
 
   if (!project) {
     return (

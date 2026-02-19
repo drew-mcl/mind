@@ -195,46 +195,72 @@ export function Sidebar() {
               Add first domain
             </button>
           )}
-          <button
-            onClick={applyLayout}
-            className="w-full rounded-lg border border-border px-2.5 py-1.5 text-[11px] font-medium text-text-tertiary hover:bg-surface-hover hover:text-text-secondary transition-colors"
-          >
-            Re-arrange
-          </button>
-          <button
-            onClick={() =>
-              setConnectMode(connectMode === "blocking" ? "off" : "blocking")
-            }
-            className={cn(
-              "w-full rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors",
-              connectMode === "blocking"
-                ? "border-status-blocked bg-orange-50 text-status-blocked"
-                : "border-border text-text-tertiary hover:bg-surface-hover hover:text-text-secondary",
-            )}
-          >
-            {connectMode === "blocking" ? "Cancel linking" : "Link blocker"}
-          </button>
           
-          <button
-            onClick={() => setAutoFocusEnabled(!autoFocusEnabled)}
-            className={cn(
-              "flex w-full items-center justify-between rounded-lg border border-border px-2.5 py-1.5 text-[11px] font-medium transition-colors",
-              autoFocusEnabled
-                ? "bg-accent-subtle/30 text-accent border-accent/20"
-                : "text-text-tertiary hover:bg-surface-hover hover:text-text-secondary",
-            )}
-          >
-            <span>Auto-focus camera</span>
-            <div className={cn(
-              "h-3 w-6 rounded-full relative transition-colors",
-              autoFocusEnabled ? "bg-accent" : "bg-border"
-            )}>
-              <div className={cn(
-                "absolute top-0.5 h-2 w-2 rounded-full bg-white transition-all",
-                autoFocusEnabled ? "left-3.5" : "left-0.5"
-              )} />
+          <div className="flex flex-col gap-1.5 pt-1">
+            <h3 className="px-2 text-[9px] font-bold uppercase tracking-[0.15em] text-text-muted">Layout Density</h3>
+            <div className="grid grid-cols-3 gap-1">
+              <button
+                onClick={() => applyLayout("compact")}
+                className="rounded-md border border-border py-1 text-[10px] font-bold text-text-tertiary hover:bg-surface-hover hover:text-text-secondary transition-all"
+                title="Super close together"
+              >
+                Compact
+              </button>
+              <button
+                onClick={() => applyLayout("balanced")}
+                className="rounded-md border border-border py-1 text-[10px] font-bold text-text-tertiary hover:bg-surface-hover hover:text-text-secondary transition-all"
+                title="Balanced spacing (Default)"
+              >
+                Normal
+              </button>
+              <button
+                onClick={() => applyLayout("exploded")}
+                className="rounded-md border border-border py-1 text-[10px] font-bold text-text-tertiary hover:bg-surface-hover hover:text-text-secondary transition-all"
+                title="Spread everything right out"
+              >
+                Exploded
+              </button>
             </div>
-          </button>
+          </div>
+
+          <div className="flex flex-col gap-1.5 pt-1">
+            <h3 className="px-2 text-[9px] font-bold uppercase tracking-[0.15em] text-text-muted">Interactions</h3>
+            <button
+              onClick={() =>
+                setConnectMode(connectMode === "blocking" ? "off" : "blocking")
+              }
+              className={cn(
+                "w-full rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors text-left flex items-center justify-between",
+                connectMode === "blocking"
+                  ? "border-status-blocked bg-orange-50 text-status-blocked"
+                  : "border-border text-text-tertiary hover:bg-surface-hover hover:text-text-secondary",
+              )}
+            >
+              <span>Link blocker</span>
+              {connectMode === "blocking" && <span className="h-1.5 w-1.5 rounded-full bg-status-blocked animate-pulse" />}
+            </button>
+            
+            <button
+              onClick={() => setAutoFocusEnabled(!autoFocusEnabled)}
+              className={cn(
+                "flex w-full items-center justify-between rounded-lg border border-border px-2.5 py-1.5 text-[11px] font-medium transition-colors",
+                autoFocusEnabled
+                  ? "bg-accent-subtle/30 text-accent border-accent/20"
+                  : "text-text-tertiary hover:bg-surface-hover hover:text-text-secondary",
+              )}
+            >
+              <span>Auto-focus camera</span>
+              <div className={cn(
+                "h-3 w-6 rounded-full relative transition-colors",
+                autoFocusEnabled ? "bg-accent" : "bg-border"
+              )}>
+                <div className={cn(
+                  "absolute top-0.5 h-2 w-2 rounded-full bg-white transition-all",
+                  autoFocusEnabled ? "left-3.5" : "left-0.5"
+                )} />
+              </div>
+            </button>
+          </div>
         </div>
 
         <NodeDetail />

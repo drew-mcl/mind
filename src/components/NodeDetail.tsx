@@ -47,8 +47,6 @@ export function NodeDetail() {
   const toggleGoal = useStore((s) => s.toggleGoal);
   const focusedNodeId = useStore((s) => s.focusedNodeId);
   const setFocusedNode = useStore((s) => s.setFocusedNode);
-  const lockedNodeId = useStore((s) => s.lockedNodeId);
-  const setLockedNode = useStore((s) => s.setLockedNode);
   const edges = useActiveEdges();
 
   const [isPreview, setIsPreview] = useState(false);
@@ -201,19 +199,6 @@ export function NodeDetail() {
           )}
         >
           {focusedNodeId === node.id ? "Unfocus" : "Focus"}
-        </button>
-
-        <button
-          onClick={() => setLockedNode(lockedNodeId === node.id ? null : node.id)}
-          className={cn(
-            "rounded-md border px-3 py-1.5 text-xs font-medium transition-colors",
-            lockedNodeId === node.id
-              ? "border-emerald-500 bg-emerald-500 text-white hover:bg-emerald-600"
-              : "border-border text-text-tertiary hover:bg-surface-hover hover:text-text-secondary"
-          )}
-          title="Lock the camera on this node while you work"
-        >
-          {lockedNodeId === node.id ? "Unlock View" : "Lock View"}
         </button>
 
         {canPromote && (

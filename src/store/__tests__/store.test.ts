@@ -422,14 +422,12 @@ describe("useStore", () => {
       const activeId = useStore.getState().activeProjectId!;
       useStore.getState().setSelectedNode("some-node");
       useStore.getState().setFocusedNode("some-node");
-      useStore.getState().setLockedNode("some-node");
 
       await useStore.getState().performDeleteProject(activeId);
 
       const state = useStore.getState();
       expect(state.selectedNodeId).toBeNull();
       expect(state.focusedNodeId).toBeNull();
-      expect(state.lockedNodeId).toBeNull();
     });
   });
 });

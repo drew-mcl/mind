@@ -142,7 +142,6 @@ export const useStore = create<MindStore>((set, get) => ({
   focusedNodeId: null,
   sidebarCollapsed: false,
   autoFocusEnabled: true,
-  lockedNodeId: null,
   confirmationModal: {
     isOpen: false,
     title: "",
@@ -177,7 +176,7 @@ export const useStore = create<MindStore>((set, get) => ({
     // If we only have summary data (no nodes), fetch the full project
     if (existing && existing.nodes.length === 0) {
       try {
-        set({ saveStatus: "saving", activeProjectId: id, selectedNodeId: null, editingNodeId: null, focusedNodeId: null, searchQuery: "", lockedNodeId: null });
+        set({ saveStatus: "saving", activeProjectId: id, selectedNodeId: null, editingNodeId: null, focusedNodeId: null, searchQuery: "" });
         const fullProject = await fetchProject(id);
         // Re-read projects after await to avoid stale closure
         set({
@@ -189,7 +188,7 @@ export const useStore = create<MindStore>((set, get) => ({
         return;
       }
     } else {
-      set({ activeProjectId: id, selectedNodeId: null, editingNodeId: null, focusedNodeId: null, searchQuery: "", lockedNodeId: null });
+      set({ activeProjectId: id, selectedNodeId: null, editingNodeId: null, focusedNodeId: null, searchQuery: "" });
     }
   },
 
@@ -204,8 +203,6 @@ export const useStore = create<MindStore>((set, get) => ({
   setSidebarCollapsed: (sidebarCollapsed) => set({ sidebarCollapsed }),
 
   setAutoFocusEnabled: (autoFocusEnabled) => set({ autoFocusEnabled }),
-
-  setLockedNode: (lockedNodeId) => set({ lockedNodeId }),
 
   openConfirmationModal: (options) => set({
     confirmationModal: { ...options, isOpen: true }
@@ -573,7 +570,6 @@ export const useStore = create<MindStore>((set, get) => ({
           selectedNodeId: null,
           editingNodeId: null,
           focusedNodeId: null,
-          lockedNodeId: null,
         });
       }
       
@@ -583,11 +579,11 @@ export const useStore = create<MindStore>((set, get) => ({
     }
   },
 
-  applyLayout: (onComplete) => {
+  applyLayout: (density = "balanced", onComplete) => {
     const project = get().activeProject();
     if (!project) return;
 
-    const { nodes, edges } = applyRadialLayout(project.nodes, project.edges);
+    const { nodes, edges } = applyRadialLayout(project.nodes, project.edges, density);
     set({
       layoutVersion: get().layoutVersion + 1,
       projects: get().projects.map((p) =>
