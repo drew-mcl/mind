@@ -27,6 +27,7 @@ const (
 // Shapes by node type (matching athena internal/cli/box.go)
 //   root:    ■/□ (goal equivalent)
 //   domain:  ◆/◇ (feature equivalent)
+//   goal:    ▼/▽
 //   feature: ●/○ (task equivalent)
 //   task:    ●/○
 const (
@@ -34,6 +35,8 @@ const (
 	shapeRootFilled  = "■"
 	shapeDomainOpen  = "◇"
 	shapeDomainFill  = "◆"
+	shapeGoalOpen    = "▽"
+	shapeGoalFilled  = "▼"
 	shapeItemOpen    = "○"
 	shapeItemFilled  = "●"
 )

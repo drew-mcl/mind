@@ -31,9 +31,31 @@ const NODE_DIMS: Record<string, { w: number; h: number }> = {
   feature: { w: 180, h: 70 },
   task: { w: 180, h: 70 },
 };
+const TASK_CARD_MAX_WIDTH = 380;
+const TASK_CARD_INNER_MAX_WIDTH = 300;
+const TASK_CARD_INNER_MIN_WIDTH = 120;
+const TASK_CARD_TEXT_CHAR_WIDTH = 6.15;
+const TASK_CARD_EXTRA_LINE_HEIGHT = 16;
+const TASK_CARD_MAX_HEIGHT = 220;
 
 function dims(node: MindNode) {
   const fallback = NODE_DIMS[node.data.type] ?? NODE_DIMS.task;
+  if (node.data.type === "feature" || node.data.type === "task") {
+    const label = node.data.label?.trim() || "Untitled";
+    const rawTextWidth = Math.max(52, label.length * TASK_CARD_TEXT_CHAR_WIDTH);
+    const innerWidth = Math.min(
+      TASK_CARD_INNER_MAX_WIDTH,
+      Math.max(TASK_CARD_INNER_MIN_WIDTH, rawTextWidth),
+    );
+    const lines = Math.max(1, Math.ceil(rawTextWidth / innerWidth));
+    return {
+      w: Math.min(TASK_CARD_MAX_WIDTH, Math.max(fallback.w, innerWidth + 38)),
+      h: Math.min(
+        TASK_CARD_MAX_HEIGHT,
+        fallback.h + Math.max(0, lines - 1) * TASK_CARD_EXTRA_LINE_HEIGHT,
+      ),
+    };
+  }
   return {
     w: node.measured?.width ?? fallback.w,
     h: node.measured?.height ?? fallback.h,
@@ -243,7 +265,7 @@ describe("applyRadialLayout", () => {
     const project = readProjectFixture("mind");
     const result = applyRadialLayout(project.nodes, project.edges);
     const maxRadius = maxRadiusFromRoot(result.nodes);
-    expect(maxRadius).toBeLessThan(930);
+    expect(maxRadius).toBeLessThan(1150);
   });
 
   it("keeps depth-2+ cards out of the root inner core on mind", () => {
@@ -264,5 +286,37 @@ describe("applyRadialLayout", () => {
     const project = readProjectFixture("sre");
     const result = applyRadialLayout(project.nodes, project.edges);
     expect(countOverlaps(result.nodes, 8, 8)).toBe(0);
+  });
+
+  it("ignores stale oversized measured width for deep task-like cards", () => {
+    const nodes: MindNode[] = [
+      makeNode("root", "root"),
+      makeNode("d1", "domain"),
+      {
+        ...makeNode("f1", "feature"),
+        data: {
+          label:
+            "this is a very long feature card that should wrap instead of stretching to a huge single line card",
+          type: "feature",
+          status: "pending",
+        },
+        measured: { width: 980, height: 70 },
+      },
+      makeNode("d2", "domain"),
+    ];
+
+    const edges: MindEdge[] = [
+      makeEdge("root", "d1"),
+      makeEdge("root", "d2"),
+      makeEdge("d1", "f1"),
+    ];
+
+    const result = applyRadialLayout(nodes, edges);
+    const root = result.nodes.find((n) => n.id === "root")!;
+    const feature = result.nodes.find((n) => n.id === "f1")!;
+    const rootCenter = center(root);
+
+    expect(intersectsCoreCircle(feature, rootCenter.x, rootCenter.y, 96)).toBe(false);
+    expect(maxRadiusFromRoot(result.nodes)).toBeLessThan(820);
   });
 });

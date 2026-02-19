@@ -8,9 +8,33 @@ const NODE_DIMS: Record<string, { w: number; h: number }> = {
   feature: { w: 180, h: 70 },
   task: { w: 180, h: 70 },
 };
+const TASK_CARD_MAX_WIDTH = 380;
+const TASK_CARD_INNER_MAX_WIDTH = 300;
+const TASK_CARD_INNER_MIN_WIDTH = 120;
+const TASK_CARD_TEXT_CHAR_WIDTH = 6.15;
+const TASK_CARD_EXTRA_LINE_HEIGHT = 16;
+const TASK_CARD_MAX_HEIGHT = 220;
 
 function nodeRect(node: MindNode) {
   const dims = NODE_DIMS[node.data.type] ?? NODE_DIMS.task;
+  if (node.data.type === "feature" || node.data.type === "task") {
+    const label = node.data.label?.trim() || "Untitled";
+    const rawTextWidth = Math.max(52, label.length * TASK_CARD_TEXT_CHAR_WIDTH);
+    const innerWidth = Math.min(
+      TASK_CARD_INNER_MAX_WIDTH,
+      Math.max(TASK_CARD_INNER_MIN_WIDTH, rawTextWidth),
+    );
+    const lines = Math.max(1, Math.ceil(rawTextWidth / innerWidth));
+    return {
+      x: node.position.x,
+      y: node.position.y,
+      w: Math.min(TASK_CARD_MAX_WIDTH, Math.max(dims.w, innerWidth + 38)),
+      h: Math.min(
+        TASK_CARD_MAX_HEIGHT,
+        dims.h + Math.max(0, lines - 1) * TASK_CARD_EXTRA_LINE_HEIGHT,
+      ),
+    };
+  }
   return {
     x: node.position.x,
     y: node.position.y,

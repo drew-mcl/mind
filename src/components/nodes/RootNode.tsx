@@ -10,20 +10,26 @@ export function RootNode({ id, data, selected }: NodeProps<MindNode>) {
   const addSide = data.uiAddSide ?? "bottom";
 
   return (
-    <div className={cn("mind-node relative", selected && "node-selected")}>
+    <div
+      className={cn(
+        "mind-node group relative transition-all duration-500 ease-out",
+        selected ? "scale-[1.05] z-10" : "hover:scale-[1.02]",
+        data.isFiltered && "node-filtered"
+      )}
+    >
       <div
         className={cn(
-          "rounded-2xl px-10 py-5 text-center",
-          "bg-surface border-2 border-accent/30",
-          "shadow-[0_2px_8px_rgba(99,102,241,0.06),0_8px_28px_rgba(99,102,241,0.05)]",
-          selected && "border-accent shadow-[0_0_0_3px_rgba(99,102,241,0.15),0_8px_28px_rgba(99,102,241,0.08)]",
+          "rounded-[2rem] px-12 py-7 text-center",
+          "bg-white/90 backdrop-blur-xl border-2 border-accent/20",
+          "transition-all duration-300 shadow-lg",
+          selected ? "shadow-2xl border-accent/40 ring-4 ring-accent/10" : "group-hover:shadow-xl",
         )}
       >
-        <span className="text-lg font-bold tracking-tight text-text-primary">
+        <span className="text-2xl font-black tracking-tight text-text-primary bg-gradient-to-br from-text-primary to-text-secondary bg-clip-text">
           {data.label}
         </span>
         {data.description && (
-          <div className="mt-0.5 text-xs text-text-tertiary">
+          <div className="mt-1 text-xs font-mono uppercase tracking-[0.2em] text-text-tertiary opacity-70">
             {data.description}
           </div>
         )}
@@ -35,14 +41,15 @@ export function RootNode({ id, data, selected }: NodeProps<MindNode>) {
           addChildNode(id);
         }}
         className={cn(
-          "node-add-btn absolute flex h-7 w-7 items-center justify-center rounded-full bg-accent text-[16px] font-semibold leading-none text-white shadow-sm ring-2 ring-white hover:bg-accent-hover transition-colors",
+          "node-add-btn absolute flex h-8 w-8 items-center justify-center rounded-full bg-accent text-[18px] font-bold leading-none text-white shadow-xl ring-4 ring-white hover:bg-accent-hover hover:scale-110 transition-all",
           addButtonSideClass[addSide],
         )}
       >
         +
       </button>
 
-      <Handle type="source" position={Position.Bottom} />
+      <Handle type="source" position={Position.Bottom} className="opacity-0" />
     </div>
   );
 }
+

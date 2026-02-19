@@ -1,17 +1,18 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Handle, Position } from "@xyflow/react";
 import type { NodeProps } from "@xyflow/react";
 import type { MindNode, TaskStatus } from "@/types";
 import { cn } from "@/lib/cn";
 import { StatusDot } from "./StatusDot";
-import { useStore } from "@/store";
+import { useStore, useActiveProject } from "@/store";
 import { addButtonSideClass } from "./addButtonSide";
+import { domainColor } from "@/lib/colors";
 
 const statusLabel: Record<TaskStatus, string> = {
-  pending: "Pending",
-  in_progress: "In progress",
-  blocked: "Blocked",
-  done: "Done",
+  pending: "Goal: Pending",
+  in_progress: "Goal: Active",
+  blocked: "Goal: Blocked",
+  done: "Goal: Achieved",
 };
 
 const statusPillStyle: Record<TaskStatus, React.CSSProperties> = {
@@ -34,32 +35,43 @@ const statusPillStyle: Record<TaskStatus, React.CSSProperties> = {
   },
 };
 
-const statusAura: Record<TaskStatus, string> = {
-  pending: "bg-white/95",
-  in_progress: "bg-status-progress/[0.03]",
-  blocked: "bg-status-blocked/[0.04]",
-  done: "bg-status-done/[0.02] opacity-90",
-};
-
-const statusGlow: Record<TaskStatus, string> = {
-  pending: "transparent",
-  in_progress: "color-mix(in srgb, var(--color-status-progress) 25%, transparent)",
-  blocked: "color-mix(in srgb, var(--color-status-blocked) 35%, transparent)",
-  done: "transparent",
-};
-
-export function TaskNode({ id, data, selected }: NodeProps<MindNode>) {
+export function GoalNode({ id, data, selected }: NodeProps<MindNode>) {
   const status = data.status ?? "pending";
   const addSide = data.uiAddSide ?? "bottom";
   const addChildNode = useStore((s) => s.addChildNode);
   const editingNodeId = useStore((s) => s.editingNodeId);
   const setEditingNode = useStore((s) => s.setEditingNode);
   const updateNodeData = useStore((s) => s.updateNodeData);
+  const project = useActiveProject();
   const inputRef = useRef<HTMLInputElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const [editMinWidth, setEditMinWidth] = useState<number | undefined>();
 
   const isEditing = editingNodeId === id;
+
+  // Determine domain color for the left accent
+  const color = useMemo(() => {
+    if (!project) return domainColor(0);
+    
+    // Find ancestor domain node
+    const visitParent = (currentId: string): string | null => {
+      const edge = project.edges.find(e => e.target === currentId && e.data?.edgeType === "hierarchy");
+      if (!edge) return null;
+      const parent = project.nodes.find(n => n.id === edge.source);
+      if (!parent) return null;
+      if (parent.data.type === "domain") return parent.id;
+      return visitParent(parent.id);
+    };
+
+    const domainId = visitParent(id);
+    if (!domainId) return domainColor(0);
+
+    const domainIds = project.nodes
+      .filter((n) => n.data.type === "domain")
+      .map((n) => n.id);
+    const index = Math.max(0, domainIds.indexOf(domainId));
+    return domainColor(index);
+  }, [project, id]);
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -82,30 +94,28 @@ export function TaskNode({ id, data, selected }: NodeProps<MindNode>) {
         selected ? "scale-[1.03] z-10" : "hover:scale-[1.015]",
         data.isFiltered && "node-filtered"
       )}
-      style={{
-        ["--glow-color" as any]: statusGlow[status],
-      } as React.CSSProperties}
     >
       <div
         className={cn(
-          "rounded-xl px-4 py-3 min-w-[140px] max-w-[380px]",
+          "rounded-xl px-5 py-4 min-w-[160px] max-w-[400px]",
           "backdrop-blur-md border border-border shadow-md",
           "transition-all duration-300",
-          statusAura[status],
+          "bg-white/95 border-l-[6px]",
           selected ? "shadow-lg ring-2 ring-accent/30 border-accent/40" : "group-hover:shadow-lg",
-          status !== "pending" && status !== "done" && "shadow-glow",
         )}
         onDoubleClick={() => {
           if (cardRef.current) setEditMinWidth(cardRef.current.offsetWidth);
           setEditingNode(id);
         }}
         style={{
+          borderLeftColor: color.border,
+          backgroundColor: `color-mix(in srgb, ${color.bg} 8%, white)`,
           ...(isEditing && editMinWidth ? { minWidth: editMinWidth } : {}),
         }}
         ref={cardRef}
       >
-        <div className="flex items-start gap-2.5">
-          <span className="mt-[5px] shrink-0">
+        <div className="flex items-start gap-3">
+          <span className="mt-[6px] shrink-0">
             <StatusDot status={status} />
           </span>
           {isEditing ? (
@@ -117,16 +127,16 @@ export function TaskNode({ id, data, selected }: NodeProps<MindNode>) {
                 if (e.key === "Enter") commitEdit();
                 if (e.key === "Escape") setEditingNode(null);
               }}
-              className="min-w-0 flex-1 bg-transparent text-[14px] font-bold tracking-tight text-text-primary outline-none"
+              className="min-w-0 flex-1 bg-transparent text-[15px] font-black tracking-tight text-text-primary outline-none"
             />
           ) : (
-            <span className="min-w-0 text-[14px] font-bold leading-[1.3] tracking-tight text-text-primary whitespace-normal break-words">
-              {data.label || "Untitled"}
+            <span className="min-w-0 text-[15px] font-black leading-[1.3] tracking-tight text-text-primary whitespace-normal break-words">
+              {data.label || "Untitled Goal"}
             </span>
           )}
         </div>
         {!isEditing && (
-          <div className="mt-2 flex items-center gap-2 pl-[17px]">
+          <div className="mt-2.5 flex items-center gap-2 pl-[20px]">
             <span
               className="inline-block rounded px-1.5 py-[0.5px] font-mono text-[9px] font-bold uppercase tracking-wider"
               style={statusPillStyle[status]}
@@ -151,6 +161,7 @@ export function TaskNode({ id, data, selected }: NodeProps<MindNode>) {
           "node-add-btn absolute flex h-7 w-7 items-center justify-center rounded-full bg-text-primary text-[16px] font-semibold leading-none text-white shadow-lg ring-4 ring-white hover:bg-accent hover:scale-110 transition-all",
           addButtonSideClass[addSide],
         )}
+        style={{ backgroundColor: color.border }}
       >
         +
       </button>

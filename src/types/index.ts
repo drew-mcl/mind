@@ -1,6 +1,6 @@
 import type { Node, Edge, OnNodesChange, OnEdgesChange } from "@xyflow/react";
 
-export type NodeType = "root" | "domain" | "feature" | "task";
+export type NodeType = "root" | "domain" | "goal" | "feature" | "task";
 export type TaskStatus = "pending" | "in_progress" | "blocked" | "done";
 export type EdgeType = "hierarchy" | "blocks";
 export type SaveStatus = "saved" | "dirty" | "saving" | "error";
@@ -14,6 +14,7 @@ export type MindNodeData = {
   status?: TaskStatus;
   // UI-only hint injected at render time; not persisted.
   uiAddSide?: AddButtonSide;
+  isFiltered?: boolean;
 };
 
 export type MindNode = Node<MindNodeData, string>;
@@ -44,6 +45,11 @@ export type MindStore = {
   layoutVersion: number;
   saveStatus: SaveStatus;
   saveError: string | null;
+  searchQuery: string;
+  focusedNodeId: string | null;
+  sidebarCollapsed: boolean;
+  autoFocusEnabled: boolean;
+  lockedNodeId: string | null;
 
   // Derived
   activeProject: () => ProjectData | undefined;
@@ -54,6 +60,11 @@ export type MindStore = {
   setActiveProject: (id: string) => void;
   setSelectedNode: (id: string | null) => void;
   setEditingNode: (id: string | null) => void;
+  setSearchQuery: (query: string) => void;
+  setFocusedNode: (id: string | null) => void;
+  setSidebarCollapsed: (collapsed: boolean) => void;
+  setAutoFocusEnabled: (enabled: boolean) => void;
+  setLockedNode: (id: string | null) => void;
 
   // Node/edge mutations
   onNodesChange: OnNodesChange<MindNode>;
@@ -62,6 +73,7 @@ export type MindStore = {
   addChildNode: (parentId: string) => void;
   addBlockingEdge: (sourceId: string, targetId: string) => void;
   deleteNode: (nodeId: string) => void;
+  toggleGoal: (nodeId: string) => void;
   createProject: (name: string) => void;
   applyLayout: () => void;
 

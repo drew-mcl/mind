@@ -43,17 +43,24 @@ export function DomainNode({ id, data, selected }: NodeProps<MindNode>) {
   }, [id, updateNodeData, setEditingNode]);
 
   return (
-    <div className={cn("mind-node relative", selected && "node-selected")}>
+    <div
+      className={cn(
+        "mind-node group relative transition-all duration-300 ease-out",
+        selected ? "scale-[1.04] z-10" : "hover:scale-[1.02]",
+        data.isFiltered && "node-filtered"
+      )}
+    >
       <div
         className={cn(
-          "rounded-xl px-6 py-3.5 text-center min-w-[130px]",
-          "border-l-4",
-          "shadow-[0_1px_4px_rgba(0,0,0,0.04),0_4px_14px_rgba(0,0,0,0.04)]",
-          selected && "shadow-[0_0_0_2px_var(--color-accent),0_4px_16px_rgba(99,102,241,0.1)]",
+          "rounded-2xl px-6 py-4 text-center min-w-[150px]",
+          "backdrop-blur-md border border-white/20 shadow-md",
+          "transition-all duration-300",
+          selected ? "shadow-lg ring-2 ring-accent/20" : "group-hover:shadow-lg",
         )}
         style={{
-          borderLeftColor: color.border,
-          backgroundColor: color.bg,
+          backgroundColor: color.bg.replace(")", ", 0.92)").replace("rgb", "rgba"),
+          boxShadow: selected ? `0 12px 24px -8px ${color.border}44` : undefined,
+          borderColor: color.border,
           ...(isEditing && editMinWidth ? { minWidth: editMinWidth } : {}),
         }}
         onDoubleClick={() => {
@@ -71,16 +78,16 @@ export function DomainNode({ id, data, selected }: NodeProps<MindNode>) {
               if (e.key === "Enter") commitEdit();
               if (e.key === "Escape") setEditingNode(null);
             }}
-            className="w-full bg-transparent text-center text-[14px] font-semibold tracking-tight outline-none"
+            className="w-full bg-transparent text-center text-[15px] font-bold tracking-tight outline-none"
             style={{ color: color.text }}
           />
         ) : (
-          <span className="text-[14px] font-semibold tracking-tight" style={{ color: color.text }}>
+          <span className="text-[15px] font-bold tracking-tight" style={{ color: color.text }}>
             {data.label || "Untitled"}
           </span>
         )}
         {!isEditing && data.description && (
-          <div className="mt-1 text-[11px] text-text-tertiary truncate max-w-[160px] mx-auto">
+          <div className="mt-1.5 text-[10px] font-mono uppercase tracking-widest opacity-60 truncate max-w-[180px] mx-auto">
             {data.description}
           </div>
         )}
@@ -92,7 +99,7 @@ export function DomainNode({ id, data, selected }: NodeProps<MindNode>) {
           addChildNode(id);
         }}
         className={cn(
-          "node-add-btn absolute flex h-7 w-7 items-center justify-center rounded-full text-[16px] font-semibold leading-none text-white shadow-sm ring-2 ring-white transition-colors",
+          "node-add-btn absolute flex h-7 w-7 items-center justify-center rounded-full text-[16px] font-semibold leading-none text-white shadow-lg ring-4 ring-white transition-all hover:scale-110",
           addButtonSideClass[addSide],
         )}
         style={{ backgroundColor: color.border }}
@@ -100,8 +107,9 @@ export function DomainNode({ id, data, selected }: NodeProps<MindNode>) {
         +
       </button>
 
-      <Handle type="target" position={Position.Top} />
-      <Handle type="source" position={Position.Bottom} />
+      <Handle type="target" position={Position.Top} className="opacity-0" />
+      <Handle type="source" position={Position.Bottom} className="opacity-0" />
     </div>
   );
 }
+

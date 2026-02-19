@@ -18,9 +18,27 @@ export function dataApi(): Plugin {
       server.middlewares.use((req, res, next) => {
         if (!req.url?.startsWith("/api/projects")) return next();
 
+        // GET /api/projects/:id — load a specific project (must be before list-all)
+        if (req.method === "GET") {
+          const match = req.url!.match(/^\/api\/projects\/([^?/]+)/);
+          if (match) {
+            const id = decodeURIComponent(match[1]);
+            const filePath = path.join(DATA_DIR, `${id}.json`);
+            if (fs.existsSync(filePath)) {
+              const raw = fs.readFileSync(filePath, "utf-8");
+              res.setHeader("Content-Type", "application/json");
+              res.end(raw);
+              return;
+            }
+            res.statusCode = 404;
+            res.end(JSON.stringify({ error: "Project not found" }));
+            return;
+          }
+        }
+
         // GET /api/projects — list all projects
-        if (req.method === "GET" && req.url.startsWith("/api/projects")) {
-          const url = new URL(req.url, `http://${req.headers.host}`);
+        if (req.method === "GET") {
+          const url = new URL(req.url!, `http://${req.headers.host}`);
           const isSummary = url.searchParams.get("summary") === "true";
 
           ensureDataDir();
@@ -40,21 +58,6 @@ export function dataApi(): Plugin {
           res.setHeader("Content-Type", "application/json");
           res.end(JSON.stringify(projects));
           return;
-        }
-
-        // GET /api/projects/:id — load a specific project
-        if (req.method === "GET") {
-          const match = req.url.match(/^\/api\/projects\/([^?]+)$/);
-          if (match) {
-            const id = decodeURIComponent(match[1]);
-            const filePath = path.join(DATA_DIR, `${id}.json`);
-            if (fs.existsSync(filePath)) {
-              const raw = fs.readFileSync(filePath, "utf-8");
-              res.setHeader("Content-Type", "application/json");
-              res.end(raw);
-              return;
-            }
-          }
         }
 
         // PUT /api/projects/:id — save a project with atomic write

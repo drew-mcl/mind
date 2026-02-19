@@ -157,9 +157,9 @@ func renderTreeNode(w io.Writer, id string, nodeMap map[string]*data.Node, child
 		meta = append(meta, fmt.Sprintf("%s⊘ blocked by: %s%s", red, strings.Join(bs, ", "), reset))
 	}
 
-	// Description (only for domain nodes, shown inline dimmed)
+	// Description (only for domain and goal nodes, shown inline dimmed)
 	descStr := ""
-	if node.Type == "domain" && node.Data.Description != "" {
+	if (node.Type == "domain" || node.Type == "goal") && node.Data.Description != "" {
 		descStr = fmt.Sprintf(" %s— %s%s", dim, node.Data.Description, reset)
 	}
 
@@ -207,6 +207,17 @@ func nodeShape(n *data.Node) (string, string) {
 		return shapeRootOpen, blue
 	case "domain":
 		return shapeDomainFill, blue
+	case "goal":
+		switch n.Data.Status {
+		case "done":
+			return shapeGoalFilled, gray
+		case "in_progress":
+			return shapeGoalFilled, blue
+		case "blocked":
+			return shapeGoalOpen, red
+		default:
+			return shapeGoalOpen, gray
+		}
 	case "feature", "task":
 		switch n.Data.Status {
 		case "done":

@@ -16,6 +16,11 @@ export function Sidebar() {
   const saveStatus = useStore((s) => s.saveStatus);
   const saveError = useStore((s) => s.saveError);
   const clearSaveError = useStore((s) => s.clearSaveError);
+  const searchQuery = useStore((s) => s.searchQuery);
+  const setSearchQuery = useStore((s) => s.setSearchQuery);
+  const setSidebarCollapsed = useStore((s) => s.setSidebarCollapsed);
+  const autoFocusEnabled = useStore((s) => s.autoFocusEnabled);
+  const setAutoFocusEnabled = useStore((s) => s.setAutoFocusEnabled);
 
   const [isCreating, setIsCreating] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -47,10 +52,30 @@ export function Sidebar() {
           : "Saved";
 
   return (
-    <aside className="flex h-full w-60 flex-col border-r border-border bg-surface">
+    <aside className="flex h-full w-full flex-col bg-surface">
       <div className="px-5 py-3.5 border-b border-border-subtle">
         <div className="flex items-center justify-between gap-2">
-          <h1 className="text-sm font-bold tracking-tight text-text-primary">mind</h1>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSidebarCollapsed(true)}
+              className="group -ml-1 flex h-6 w-6 items-center justify-center rounded-md text-text-muted hover:bg-surface-hover hover:text-text-secondary transition-colors"
+              title="Collapse sidebar"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </button>
+            <h1 className="text-sm font-bold tracking-tight text-text-primary">mind</h1>
+          </div>
           <button
             onClick={() => saveStatus === "error" && clearSaveError()}
             className={cn(
@@ -64,6 +89,26 @@ export function Sidebar() {
           >
             {saveStatusText}
           </button>
+        </div>
+      </div>
+
+      <div className="px-3 py-3 border-b border-border-subtle bg-canvas/30">
+        <div className="relative">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search nodes..."
+            className="w-full rounded-md border border-border bg-surface px-2.5 py-1.5 text-[12px] text-text-primary outline-none focus:border-accent placeholder:text-text-muted"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-secondary"
+            >
+              ×
+            </button>
+          )}
         </div>
       </div>
 
@@ -152,6 +197,27 @@ export function Sidebar() {
             )}
           >
             {connectMode === "blocking" ? "Cancel linking" : "Link blocker"}
+          </button>
+          
+          <button
+            onClick={() => setAutoFocusEnabled(!autoFocusEnabled)}
+            className={cn(
+              "flex w-full items-center justify-between rounded-lg border border-border px-2.5 py-1.5 text-[11px] font-medium transition-colors",
+              autoFocusEnabled
+                ? "bg-accent-subtle/30 text-accent border-accent/20"
+                : "text-text-tertiary hover:bg-surface-hover hover:text-text-secondary",
+            )}
+          >
+            <span>Auto-focus camera</span>
+            <div className={cn(
+              "h-3 w-6 rounded-full relative transition-colors",
+              autoFocusEnabled ? "bg-accent" : "bg-border"
+            )}>
+              <div className={cn(
+                "absolute top-0.5 h-2 w-2 rounded-full bg-white transition-all",
+                autoFocusEnabled ? "left-3.5" : "left-0.5"
+              )} />
+            </div>
           </button>
         </div>
 

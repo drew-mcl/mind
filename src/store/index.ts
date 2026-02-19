@@ -11,21 +11,44 @@ let nodeCounter = 0;
 const NODE_SIZE_FALLBACK: Record<string, { w: number; h: number }> = {
   root: { w: 160, h: 56 },
   domain: { w: 170, h: 50 },
+  goal: { w: 190, h: 76 },
   feature: { w: 180, h: 70 },
   task: { w: 180, h: 70 },
 };
+const TASK_CARD_MAX_WIDTH = 380;
+const TASK_CARD_INNER_MAX_WIDTH = 300;
+const TASK_CARD_INNER_MIN_WIDTH = 120;
+const TASK_CARD_TEXT_CHAR_WIDTH = 6.15;
+const TASK_CARD_EXTRA_LINE_HEIGHT = 16;
+const TASK_CARD_MAX_HEIGHT = 220;
 
 function nodeCenter(node: MindNode) {
-  const fallback = NODE_SIZE_FALLBACK[node.data.type] ?? NODE_SIZE_FALLBACK.task;
-  const width = node.measured?.width ?? fallback.w;
-  const height = node.measured?.height ?? fallback.h;
+  const size = nodeDims(node);
   return {
-    x: node.position.x + width / 2,
-    y: node.position.y + height / 2,
+    x: node.position.x + size.w / 2,
+    y: node.position.y + size.h / 2,
   };
 }
 
 function nodeDims(node: MindNode) {
+  const label = node.data.label?.trim() || "Untitled";
+  if (node.data.type === "goal" || node.data.type === "feature" || node.data.type === "task") {
+    const fallback = NODE_SIZE_FALLBACK[node.data.type] ?? NODE_SIZE_FALLBACK.task;
+    const rawTextWidth = Math.max(52, label.length * TASK_CARD_TEXT_CHAR_WIDTH);
+    const innerWidth = Math.min(
+      TASK_CARD_INNER_MAX_WIDTH,
+      Math.max(TASK_CARD_INNER_MIN_WIDTH, rawTextWidth),
+    );
+    const lines = Math.max(1, Math.ceil(rawTextWidth / innerWidth));
+    return {
+      w: Math.min(TASK_CARD_MAX_WIDTH, Math.max(fallback.w, innerWidth + 38)),
+      h: Math.min(
+        TASK_CARD_MAX_HEIGHT,
+        fallback.h + Math.max(0, lines - 1) * TASK_CARD_EXTRA_LINE_HEIGHT,
+      ),
+    };
+  }
+
   const fallback = NODE_SIZE_FALLBACK[node.data.type] ?? NODE_SIZE_FALLBACK.task;
   return {
     w: node.measured?.width ?? fallback.w,
@@ -115,6 +138,11 @@ export const useStore = create<MindStore>((set, get) => ({
   layoutVersion: 0,
   saveStatus: "saved",
   saveError: null,
+  searchQuery: "",
+  focusedNodeId: null,
+  sidebarCollapsed: false,
+  autoFocusEnabled: true,
+  lockedNodeId: null,
   connectMode: "off",
   connectSourceId: null,
 
@@ -138,30 +166,40 @@ export const useStore = create<MindStore>((set, get) => ({
   },
 
   setActiveProject: async (id) => {
-    const { projects } = get();
-    const existing = projects.find((p) => p.id === id);
+    const existing = get().projects.find((p) => p.id === id);
 
     // If we only have summary data (no nodes), fetch the full project
     if (existing && existing.nodes.length === 0) {
       try {
-        set({ saveStatus: "saving" });
+        set({ saveStatus: "saving", activeProjectId: id, selectedNodeId: null, editingNodeId: null, focusedNodeId: null, searchQuery: "", lockedNodeId: null });
         const fullProject = await fetchProject(id);
+        // Re-read projects after await to avoid stale closure
         set({
-          projects: projects.map((p) => (p.id === id ? fullProject : p)),
+          projects: get().projects.map((p) => (p.id === id ? fullProject : p)),
           saveStatus: "saved",
         });
       } catch (err) {
         set({ saveStatus: "error", saveError: "Failed to load project" });
         return;
       }
+    } else {
+      set({ activeProjectId: id, selectedNodeId: null, editingNodeId: null, focusedNodeId: null, searchQuery: "", lockedNodeId: null });
     }
-
-    set({ activeProjectId: id, selectedNodeId: null, editingNodeId: null });
   },
 
   setSelectedNode: (id) => set({ selectedNodeId: id }),
 
   setEditingNode: (id) => set({ editingNodeId: id }),
+
+  setSearchQuery: (searchQuery) => set({ searchQuery }),
+
+  setFocusedNode: (id) => set({ focusedNodeId: id }),
+
+  setSidebarCollapsed: (sidebarCollapsed) => set({ sidebarCollapsed }),
+
+  setAutoFocusEnabled: (autoFocusEnabled) => set({ autoFocusEnabled }),
+
+  setLockedNode: (lockedNodeId) => set({ lockedNodeId }),
 
   setConnectMode: (mode) => set({ connectMode: mode, connectSourceId: null }),
 
@@ -225,9 +263,10 @@ export const useStore = create<MindStore>((set, get) => ({
     const parent = project.nodes.find((n) => n.id === parentId);
     if (!parent) return;
 
-    const childTypeMap: Record<string, "domain" | "feature" | "task"> = {
+    const childTypeMap: Record<string, "domain" | "goal" | "feature" | "task"> = {
       root: "domain",
       domain: "feature",
+      goal: "feature",
       feature: "task",
       task: "task",
     };
@@ -297,6 +336,7 @@ export const useStore = create<MindStore>((set, get) => ({
     const baseDistByParentType: Record<string, number> = {
       root: 208,
       domain: 172,
+      goal: 160,
       feature: 148,
       task: 142,
     };
@@ -413,7 +453,7 @@ export const useStore = create<MindStore>((set, get) => ({
       data: {
         label: "",
         type: childType,
-        ...(childType === "task" || childType === "feature"
+        ...(childType === "task" || childType === "feature" || childType === "goal"
           ? { status: "pending" as const }
           : {}),
       },
@@ -469,6 +509,45 @@ export const useStore = create<MindStore>((set, get) => ({
         p.id === project.id
           ? { ...p, edges: [...p.edges, newEdge] }
           : p,
+      ),
+    });
+  },
+
+  toggleGoal: (nodeId) => {
+    const project = get().activeProject();
+    if (!project) return;
+
+    const node = project.nodes.find((n) => n.id === nodeId);
+    if (!node) return;
+
+    const isFeature = node.data.type === "feature";
+    const isGoal = node.data.type === "goal";
+    if (!isFeature && !isGoal) return;
+
+    const nextType = isFeature ? "goal" : "feature";
+    const childTargetType = isFeature ? "feature" : "task"; // if promoting to goal, children become features
+    const childSourceType = isFeature ? "task" : "feature"; // if promoting to goal, children were tasks
+
+    const updatedNodes = project.nodes.map((n) => {
+      if (n.id === nodeId) {
+        return { ...n, type: nextType, data: { ...n.data, type: nextType } };
+      }
+      // Re-type direct children
+      const isDirectChild = project.edges.some(
+        (e) =>
+          e.source === nodeId &&
+          e.target === n.id &&
+          e.data?.edgeType === "hierarchy",
+      );
+      if (isDirectChild && n.data.type === childSourceType) {
+        return { ...n, type: childTargetType, data: { ...n.data, type: childTargetType } };
+      }
+      return n;
+    });
+
+    set({
+      projects: get().projects.map((p) =>
+        p.id === project.id ? { ...p, nodes: updatedNodes as MindNode[] } : p,
       ),
     });
   },

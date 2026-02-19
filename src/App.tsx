@@ -10,6 +10,8 @@ export default function App() {
   const setActiveProject = useStore((s) => s.setActiveProject);
   const activeProjectId = useStore((s) => s.activeProjectId);
   const applyLayout = useStore((s) => s.applyLayout);
+  const isSidebarCollapsed = useStore((s) => s.sidebarCollapsed);
+  const setSidebarCollapsed = useStore((s) => s.setSidebarCollapsed);
 
   useEffect(() => {
     fetchProjectSummaries().then((summaries) => {
@@ -40,9 +42,39 @@ export default function App() {
   useDebouncedSave();
 
   return (
-    <div className="flex h-full">
-      <Sidebar />
-      <div className="flex-1">
+    <div className="flex h-full overflow-hidden">
+      <div
+        className="transition-all duration-300 ease-in-out shrink-0 border-r border-border"
+        style={{
+          width: isSidebarCollapsed ? "0px" : "240px",
+          opacity: isSidebarCollapsed ? 0 : 1,
+          pointerEvents: isSidebarCollapsed ? "none" : "auto",
+        }}
+      >
+        <Sidebar />
+      </div>
+
+      <div className="relative flex-1 min-w-0 bg-canvas">
+        {isSidebarCollapsed && (
+          <button
+            onClick={() => setSidebarCollapsed(false)}
+            className="absolute top-4 left-4 z-20 flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-surface text-text-secondary shadow-sm transition-colors hover:bg-surface-hover"
+            title="Expand sidebar"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
+        )}
         <Canvas />
       </div>
     </div>

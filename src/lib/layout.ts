@@ -22,34 +22,42 @@ function findRoot(nodes: MindNode[], adj: AdjMap): string | undefined {
 const NODE_DIMS: Record<string, { w: number; h: number }> = {
   root: { w: 160, h: 56 },
   domain: { w: 170, h: 50 },
+  goal: { w: 190, h: 76 },
   feature: { w: 180, h: 70 },
   task: { w: 180, h: 70 },
 };
 
-const NODE_PAD = 18;
+const NODE_PAD = 40; // Substantially increased for air
 // Long cards need influence, but fully trusting measured width
 // causes runaway radial expansion on dense maps.
 const SOFT_WIDTH_CAP = 220;
 const SOFT_WIDTH_FALLOFF = 0.52;
 const MAX_LAYOUT_WIDTH = 340;
-const COLLISION_PAD_X = 14;
-const COLLISION_PAD_Y = 18;
-const COLLISION_ITERS = 48; // Reduced from 72
-const COLLISION_STOP_THRESHOLD = 0.2; // Stop early if movement is minimal
+const COLLISION_PAD_X = 28; // Increased from 14-16
+const COLLISION_PAD_Y = 32; // Increased from 18-20
+const COLLISION_ITERS = 56;
+const COLLISION_STOP_THRESHOLD = 0.25;
 const SPRING_BACK = 0.045;
-const MAX_RADIAL_DRIFT = 120;
-const MIN_RADIAL_DRIFT = 52;
-const TARGET_RADIUS_BASE = 260;
-const TARGET_RADIUS_PER_SQRT_NODE = 104;
-const TARGET_RADIUS_PER_EXTRA_ROOT_BRANCH = 18;
-const INNER_CORE_RADIUS = 52;
-const INNER_CORE_DEPTH_STEP = 20;
+const MAX_RADIAL_DRIFT = 220; // Increased for flexibility
+const MIN_RADIAL_DRIFT = 80;  // More breathing room from anchor
+const TARGET_RADIUS_BASE = 320;
+const TARGET_RADIUS_PER_SQRT_NODE = 120;
+const TARGET_RADIUS_PER_EXTRA_ROOT_BRANCH = 32;
+const INNER_CORE_RADIUS = 90;
+const INNER_CORE_DEPTH_STEP = 32;
+const TASK_CARD_MAX_WIDTH = 380;
+const TASK_CARD_INNER_MAX_WIDTH = 300;
+const TASK_CARD_INNER_MIN_WIDTH = 120;
+const TASK_CARD_TEXT_CHAR_WIDTH = 6.15;
+const TASK_CARD_EXTRA_LINE_HEIGHT = 16;
+const TASK_CARD_MAX_HEIGHT = 220;
 
 const CHILD_OUTWARD_GAP: Record<string, number> = {
   root: 0,
-  domain: 92,
-  feature: 74,
-  task: 64,
+  domain: 120,
+  goal: 110,
+  feature: 100,
+  task: 90,
 };
 
 type LayoutEntry = { id: string; x: number; y: number };
@@ -86,6 +94,22 @@ function buildDepthMap(rootId: string, adj: AdjMap): Map<string, number> {
 function nodeDims(node: MindNode): { w: number; h: number } {
   const defaults = NODE_DIMS[node.data.type] ?? NODE_DIMS.task;
   const label = node.data.label?.trim() || "Untitled";
+  if (node.data.type === "goal" || node.data.type === "feature" || node.data.type === "task") {
+    const rawTextWidth = Math.max(52, label.length * TASK_CARD_TEXT_CHAR_WIDTH);
+    const innerWidth = Math.min(
+      TASK_CARD_INNER_MAX_WIDTH,
+      Math.max(TASK_CARD_INNER_MIN_WIDTH, rawTextWidth),
+    );
+    const lines = Math.max(1, Math.ceil(rawTextWidth / innerWidth));
+    return {
+      w: Math.min(TASK_CARD_MAX_WIDTH, Math.max(defaults.w, innerWidth + 38)),
+      h: Math.min(
+        TASK_CARD_MAX_HEIGHT,
+        defaults.h + Math.max(0, lines - 1) * TASK_CARD_EXTRA_LINE_HEIGHT,
+      ),
+    };
+  }
+
   const charWidth =
     node.data.type === "root"
       ? 7.2
@@ -111,6 +135,22 @@ function nodeDims(node: MindNode): { w: number; h: number } {
 function visualNodeDims(node: MindNode): NodeDims {
   const defaults = NODE_DIMS[node.data.type] ?? NODE_DIMS.task;
   const label = node.data.label?.trim() || "Untitled";
+  if (node.data.type === "goal" || node.data.type === "feature" || node.data.type === "task") {
+    const rawTextWidth = Math.max(52, label.length * TASK_CARD_TEXT_CHAR_WIDTH);
+    const innerWidth = Math.min(
+      TASK_CARD_INNER_MAX_WIDTH,
+      Math.max(TASK_CARD_INNER_MIN_WIDTH, rawTextWidth),
+    );
+    const lines = Math.max(1, Math.ceil(rawTextWidth / innerWidth));
+    return {
+      w: Math.min(TASK_CARD_MAX_WIDTH, Math.max(defaults.w, innerWidth + 38)),
+      h: Math.min(
+        TASK_CARD_MAX_HEIGHT,
+        defaults.h + Math.max(0, lines - 1) * TASK_CARD_EXTRA_LINE_HEIGHT,
+      ),
+    };
+  }
+
   const charWidth =
     node.data.type === "root"
       ? 7.2
@@ -185,9 +225,10 @@ function minRadiusForChildren(
 // will push busier subtrees outward only when they actually need space.
 const BASE_RING_GAP: Record<string, number> = {
   root: 0,
-  domain: 150,
-  feature: 102,
-  task: 84,
+  domain: 240,
+  goal: 200,
+  feature: 180,
+  task: 140,
 };
 
 function enforceSweepFloors(
@@ -273,10 +314,10 @@ function layoutRadial(
   const maxRadius = parentRadius + baseGap * 1.65 + demandBoost + children.length * 4;
   const ringRadius = Math.min(Math.max(parentRadius + baseGap, minRadius), maxRadius);
 
-  // Reserve a small constant angular gap between siblings.
-  const gapAngle = Math.min(0.08, 20 / Math.max(1, ringRadius));
+  // Reserve a larger constant angular gap between siblings.
+  const gapAngle = Math.min(0.18, 48 / Math.max(1, ringRadius));
   const totalGap = gapAngle * Math.max(0, children.length - 1);
-  const usableSweep = Math.max(sweep - totalGap, sweep * 0.7);
+  const usableSweep = Math.max(sweep - totalGap, sweep * 0.6);
 
   // Weight sweep allocation by subtree demand so dense branches get
   // more angular space than shallow sibling groups.
@@ -527,7 +568,7 @@ export function applyRadialLayout(
   }
 
   // Final pass: resolve any residual collisions with looser radial bounds.
-  for (let iter = 0; iter < 16; iter++) { // Reduced from 24
+  for (let iter = 0; iter < 28; iter++) {
     let moved = 0;
     for (let i = 0; i < ids.length; i++) {
       for (let j = i + 1; j < ids.length; j++) {
@@ -563,7 +604,7 @@ export function applyRadialLayout(
       }
     }
 
-    for (const id of ids) clampToAnchorShell(id, 28);
+    for (const id of ids) clampToAnchorShell(id, 56);
     if (moved < COLLISION_STOP_THRESHOLD) break;
   }
 
